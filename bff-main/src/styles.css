@@ -1,0 +1,240 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ============================================================
+   BFF — BHARAT FREEZE DRY FOODS
+   "Frozen Studio" premium cinematic design system
+   ============================================================ */
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* BFF brand tokens */
+  --color-ice-blue: var(--ice-blue);
+  --color-deep-navy: var(--deep-navy);
+  --color-frost-white: var(--frost-white);
+  --color-forest-green: var(--forest-green);
+  --color-spice-orange: var(--spice-orange);
+  --color-steel-silver: var(--steel-silver);
+
+  --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+:root {
+  --radius: 0.75rem;
+
+  /* Brand */
+  --ice-blue: #4FA8D8;
+  --deep-navy: #0A1420;
+  --frost-white: #EAF6FB;
+  --forest-green: #123B2C;
+  --spice-orange: #E1832E;
+  --steel-silver: #B8C4CC;
+
+  /* Site palette (dark, luxury-commercial base) */
+  --background: #060B12;
+  --foreground: #EAF6FB;
+  --card: #0F1A28;
+  --card-foreground: #EAF6FB;
+  --popover: #0F1A28;
+  --popover-foreground: #EAF6FB;
+  --primary: #4FA8D8;
+  --primary-foreground: #060B12;
+  --secondary: #14243A;
+  --secondary-foreground: #EAF6FB;
+  --muted: #14243A;
+  --muted-foreground: #B8C4CC;
+  --accent: #E1832E;
+  --accent-foreground: #060B12;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: rgba(184, 196, 204, 0.14);
+  --input: rgba(184, 196, 204, 0.18);
+  --ring: #4FA8D8;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  html {
+    scroll-behavior: smooth;
+    background: var(--background);
+  }
+
+  body {
+    background: radial-gradient(
+        ellipse at top,
+        rgba(79, 168, 216, 0.08),
+        transparent 60%
+      ),
+      var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1, h2, h3, h4, h5 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+  }
+
+  ::selection {
+    background: var(--ice-blue);
+    color: var(--deep-navy);
+  }
+}
+
+/* ============================================================
+   Signature utilities
+   ============================================================ */
+
+@utility text-display {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 0.95;
+}
+
+@utility text-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--ice-blue);
+}
+
+@utility bg-frost {
+  background: linear-gradient(
+    145deg,
+    rgba(79, 168, 216, 0.08),
+    rgba(10, 20, 32, 0.4)
+  );
+  backdrop-filter: blur(24px) saturate(140%);
+  border: 1px solid rgba(184, 196, 204, 0.14);
+}
+
+@utility bg-nav-glass {
+  background: linear-gradient(180deg, rgba(6, 11, 18, 0.85), rgba(6, 11, 18, 0.55));
+  backdrop-filter: blur(20px) saturate(160%);
+  border-bottom: 1px solid rgba(184, 196, 204, 0.08);
+}
+
+@utility bg-gradient-ice {
+  background: linear-gradient(135deg, #4FA8D8 0%, #7fc5eb 50%, #EAF6FB 100%);
+}
+
+@utility bg-gradient-primary-cta {
+  background: linear-gradient(135deg, #E1832E 0%, #4FA8D8 100%);
+  background-size: 200% 200%;
+  transition: background-position 0.6s ease;
+}
+@utility bg-gradient-primary-cta {
+  &:hover {
+    background-position: 100% 100%;
+  }
+}
+
+@utility shadow-frost {
+  box-shadow:
+    0 20px 60px -20px rgba(79, 168, 216, 0.35),
+    0 8px 24px -12px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+@utility text-gradient-ice {
+  background: linear-gradient(135deg, #EAF6FB 0%, #4FA8D8 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@utility grain-frost {
+  position: relative;
+  isolation: isolate;
+}
+@utility grain-frost {
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(
+      circle at 20% 30%,
+      rgba(79, 168, 216, 0.12),
+      transparent 50%
+    ),
+    radial-gradient(circle at 80% 70%, rgba(225, 131, 46, 0.08), transparent 50%);
+    pointer-events: none;
+    z-index: -1;
+  }
+}
+
+/* Frost drifting particles */
+@keyframes drift {
+  0% {
+    transform: translate3d(0, 0, 0);
+    opacity: 0;
+  }
+  20% { opacity: 0.7; }
+  100% {
+    transform: translate3d(var(--tx, 40px), -100vh, 0);
+    opacity: 0;
+  }
+}
+
+@utility animate-drift {
+  animation: drift var(--dur, 20s) linear infinite;
+}
+
+@keyframes shimmer-scroll {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+@utility animate-shimmer {
+  background: linear-gradient(90deg, transparent, rgba(79, 168, 216, 0.8), transparent);
+  background-size: 200% 100%;
+  animation: shimmer-scroll 3s linear infinite;
+}
+
+@keyframes tail-wag {
+  0%, 100% { transform: rotate(-8deg); }
+  50% { transform: rotate(18deg); }
+}
+@utility animate-wag {
+  transform-origin: bottom left;
+  animation: tail-wag 0.4s ease-in-out infinite;
+}
