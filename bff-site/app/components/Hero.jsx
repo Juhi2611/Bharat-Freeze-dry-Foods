@@ -85,17 +85,11 @@ export default function Hero() {
             transform: textVisible ? 'translateY(0)' : 'translateY(44px)',
             transition: 'all 1s cubic-bezier(0.16,1,0.3,1) 0.2s',
           }}>
-            Freeze the{' '}
+            The Finest Quality,{' '}
             <span style={{
               background: 'linear-gradient(135deg, #8BC34A 0%, #C5E1A5 100%)',
               WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-            }}>Freshness.</span>
-            <br />
-            Preserve the{' '}
-            <span style={{
-              background: 'linear-gradient(135deg, #FFD54F 0%, #FFAB91 100%)',
-              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-            }}>Goodness.</span>
+            }}>Sourced For You.</span>
           </h1>
 
           {/* Sub */}

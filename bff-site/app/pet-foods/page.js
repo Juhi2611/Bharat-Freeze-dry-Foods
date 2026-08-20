@@ -1,21 +1,20 @@
-import { Suspense } from 'react';
 import Navbar from '../components/Navbar';
-import Products from '../components/Products';
+import PetFoods from '../components/PetFoods';
 import Footer from '../components/Footer';
 import WhatsAppButton from '../components/WhatsAppButton';
 import { Wind } from 'lucide-react';
 
 export const metadata = {
-  title: 'Products — Bharat Freeze Dried Foods | 200+ Freeze-Dried Products',
-  description: 'Explore freeze-dried fruits, vegetables, gravies, spices, superfoods, pre-cooked meals and premium pet food.',
+  title: 'Pet Foods — Bharat Freeze Dried Foods | Premium Freeze-Dried Pet Nutrition',
+  description: 'Explore premium freeze-dried pet foods with real chicken, liver, and salmon. Preserved for your best friend.',
 };
 
-export default function ProductsPage() {
+export default function PetFoodsPage() {
   return (
     <main>
       <Navbar />
 
-      {/* Video Hero — matches Dark Theme Products Hero structure & copy */}
+      {/* Video Hero — matches Dark Theme Pet Foods Hero */}
       <section
         style={{
           position: 'relative',
@@ -35,7 +34,7 @@ export default function ProductsPage() {
             opacity: 0.70,
           }}
         >
-          <source src="/videos/products_bg.mp4" type="video/mp4" />
+          <source src="/bff-pet.mp4" type="video/mp4" />
         </video>
 
         <div className="video-overlay" style={{ position: 'absolute', inset: 0, background: 'rgba(5,15,8,0.12)', zIndex: 1 }} />
@@ -56,7 +55,7 @@ export default function ProductsPage() {
           }}>
             <Wind size={13} color="#8BC34A" />
             <span style={{ fontFamily: 'var(--font-display)', fontSize: '11px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#C5E1A5' }}>
-              The Full Range
+              Premium Pet Nutrition
             </span>
           </div>
 
@@ -66,11 +65,11 @@ export default function ProductsPage() {
             lineHeight: 1.02, letterSpacing: '-0.04em',
             color: 'white', marginBottom: '28px',
           }}>
-            Every Pack,{' '}
+            For Your{' '}
             <span style={{
-              background: 'linear-gradient(135deg, #FFD54F 0%, #FFAB91 100%)',
+              background: 'linear-gradient(135deg, #8BC34A 0%, #C5E1A5 100%)',
               WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-            }}>At Its Ripest.</span>
+            }}>Best Friend.</span>
           </h1>
 
           <p className="hero-p-anim" style={{
@@ -89,9 +88,7 @@ export default function ProductsPage() {
         }} />
       </section>
 
-      <Suspense fallback={null}>
-        <Products />
-      </Suspense>
+      <PetFoods />
       <Footer />
       <WhatsAppButton />
     </main>

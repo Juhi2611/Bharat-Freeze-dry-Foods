@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as RecipesRouteImport } from './routes/recipes'
 import { Route as ProductsRouteImport } from './routes/products'
+import { Route as PrivateLabelRouteImport } from './routes/private-label'
 import { Route as PetFoodsRouteImport } from './routes/pet-foods'
 import { Route as InquiryRouteImport } from './routes/inquiry'
 import { Route as ContactRouteImport } from './routes/contact'
@@ -27,6 +28,11 @@ const RecipesRoute = RecipesRouteImport.update({
 const ProductsRoute = ProductsRouteImport.update({
   id: '/products',
   path: '/products',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivateLabelRoute = PrivateLabelRouteImport.update({
+  id: '/private-label',
+  path: '/private-label',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PetFoodsRoute = PetFoodsRouteImport.update({
@@ -73,6 +79,7 @@ export interface FileRoutesByFullPath {
   '/contact': typeof ContactRoute
   '/inquiry': typeof InquiryRoute
   '/pet-foods': typeof PetFoodsRoute
+  '/private-label': typeof PrivateLabelRoute
   '/products': typeof ProductsRoute
   '/recipes': typeof RecipesRoute
 }
@@ -84,6 +91,7 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/inquiry': typeof InquiryRoute
   '/pet-foods': typeof PetFoodsRoute
+  '/private-label': typeof PrivateLabelRoute
   '/products': typeof ProductsRoute
   '/recipes': typeof RecipesRoute
 }
@@ -96,6 +104,7 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/inquiry': typeof InquiryRoute
   '/pet-foods': typeof PetFoodsRoute
+  '/private-label': typeof PrivateLabelRoute
   '/products': typeof ProductsRoute
   '/recipes': typeof RecipesRoute
 }
@@ -109,6 +118,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/inquiry'
     | '/pet-foods'
+    | '/private-label'
     | '/products'
     | '/recipes'
   fileRoutesByTo: FileRoutesByTo
@@ -120,6 +130,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/inquiry'
     | '/pet-foods'
+    | '/private-label'
     | '/products'
     | '/recipes'
   id:
@@ -131,6 +142,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/inquiry'
     | '/pet-foods'
+    | '/private-label'
     | '/products'
     | '/recipes'
   fileRoutesById: FileRoutesById
@@ -143,6 +155,7 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   InquiryRoute: typeof InquiryRoute
   PetFoodsRoute: typeof PetFoodsRoute
+  PrivateLabelRoute: typeof PrivateLabelRoute
   ProductsRoute: typeof ProductsRoute
   RecipesRoute: typeof RecipesRoute
 }
@@ -161,6 +174,13 @@ declare module '@tanstack/react-router' {
       path: '/products'
       fullPath: '/products'
       preLoaderRoute: typeof ProductsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/private-label': {
+      id: '/private-label'
+      path: '/private-label'
+      fullPath: '/private-label'
+      preLoaderRoute: typeof PrivateLabelRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pet-foods': {
@@ -223,6 +243,7 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   InquiryRoute: InquiryRoute,
   PetFoodsRoute: PetFoodsRoute,
+  PrivateLabelRoute: PrivateLabelRoute,
   ProductsRoute: ProductsRoute,
   RecipesRoute: RecipesRoute,
 }

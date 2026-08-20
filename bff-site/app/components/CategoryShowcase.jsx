@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Leaf, PawPrint, ArrowRight } from 'lucide-react';
@@ -9,7 +9,7 @@ const categories = [
     key: 'Fruits',
     image: '/images/fruits_hero.png',
     accent: '#2D7A3A',
-    href: '/products',
+    href: '/products?category=Fruits',
   },
   {
     name: 'Freeze-Dried Vegetables',
@@ -17,28 +17,28 @@ const categories = [
     image: '/images/vegetables_hero.png',
     accent: '#3A9148',
     organic: true,
-    href: '/products',
+    href: '/products?category=Vegetables',
   },
   {
     name: 'Freeze-Dried Gravies',
     key: 'Gravies',
     image: '/images/gravies_sauces.png',
     accent: '#E53935',
-    href: '/products',
+    href: '/products?category=Gravies',
   },
   {
     name: 'Freeze-Dried Spices',
     key: 'Spices',
     image: '/images/spices_hero.png',
     accent: '#FF7043',
-    href: '/products',
+    href: '/products?category=Spices',
   },
   {
     name: 'Pre-Cooked Meals',
     key: 'Meals',
     image: '/images/precooked_hero.png',
     accent: '#D19A2E',
-    href: '/products',
+    href: '/products?category=Pre-Cooked+Meals',
   },
   {
     name: 'Superfoods',
@@ -46,7 +46,7 @@ const categories = [
     image: '/images/superfoods_hero.png',
     accent: '#8BC34A',
     superfood: true,
-    href: '/products',
+    href: '/products?category=Superfoods',
   },
   {
     name: "Your Dog's BFF",
@@ -54,7 +54,7 @@ const categories = [
     image: '/images/pet_treats.png',
     accent: '#FF7043',
     pet: true,
-    href: '/products',
+    href: '/pet-foods',
   },
 ];
 

@@ -1,21 +1,20 @@
-import { Suspense } from 'react';
 import Navbar from '../components/Navbar';
-import Products from '../components/Products';
+import B2BExport from '../components/B2BExport';
 import Footer from '../components/Footer';
 import WhatsAppButton from '../components/WhatsAppButton';
 import { Wind } from 'lucide-react';
 
 export const metadata = {
-  title: 'Products — Bharat Freeze Dried Foods | 200+ Freeze-Dried Products',
-  description: 'Explore freeze-dried fruits, vegetables, gravies, spices, superfoods, pre-cooked meals and premium pet food.',
+  title: "B2B & Export — Bharat Freeze Dried Foods | Global Bulk Supply",
+  description: 'Global bulk supply, HoReCa, export-grade and private-label freeze-dried foods. Container-load capable, full export documentation, cold-chain-free logistics.',
 };
 
-export default function ProductsPage() {
+export default function B2BPage() {
   return (
     <main>
       <Navbar />
 
-      {/* Video Hero — matches Dark Theme Products Hero structure & copy */}
+      {/* Restored Previous Light Theme B2B Hero */}
       <section
         style={{
           position: 'relative',
@@ -35,7 +34,7 @@ export default function ProductsPage() {
             opacity: 0.70,
           }}
         >
-          <source src="/videos/products_bg.mp4" type="video/mp4" />
+          <source src="/videos/export_bg.mp4" type="video/mp4" />
         </video>
 
         <div className="video-overlay" style={{ position: 'absolute', inset: 0, background: 'rgba(5,15,8,0.12)', zIndex: 1 }} />
@@ -56,7 +55,7 @@ export default function ProductsPage() {
           }}>
             <Wind size={13} color="#8BC34A" />
             <span style={{ fontFamily: 'var(--font-display)', fontSize: '11px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#C5E1A5' }}>
-              The Full Range
+              Global Bulk &amp; Export Solutions
             </span>
           </div>
 
@@ -66,11 +65,11 @@ export default function ProductsPage() {
             lineHeight: 1.02, letterSpacing: '-0.04em',
             color: 'white', marginBottom: '28px',
           }}>
-            Every Pack,{' '}
+            Export-Grade Freeze-Dried Foods,{' '}
             <span style={{
-              background: 'linear-gradient(135deg, #FFD54F 0%, #FFAB91 100%)',
+              background: 'linear-gradient(135deg, #8BC34A 0%, #C5E1A5 100%)',
               WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-            }}>At Its Ripest.</span>
+            }}>Delivered Worldwide.</span>
           </h1>
 
           <p className="hero-p-anim" style={{
@@ -78,8 +77,13 @@ export default function ProductsPage() {
             fontWeight: 300, lineHeight: 1.72,
             color: 'rgba(255,255,255,0.70)', maxWidth: '600px', marginBottom: '44px',
           }}>
-            Hover any pack to reveal the fresh ingredient inside. On mobile, tap the card.
+            Partner with Bharat Freeze Dry Foods for premium, shelf-stable ingredients, private labeling, and full container-load export solutions.
           </p>
+
+          <div className="hero-btns-anim" style={{ display: 'flex', flexWrap: 'wrap', gap: '14px' }}>
+            <a href="#enquiry-form" className="btn btn-primary" style={{ padding: '16px 36px', fontSize: '15px' }}>Start Export Enquiry</a>
+            <a href="#industries" className="btn btn-outline" style={{ padding: '16px 36px', fontSize: '15px' }}>Industries We Serve</a>
+          </div>
         </div>
 
         <div style={{
@@ -89,9 +93,7 @@ export default function ProductsPage() {
         }} />
       </section>
 
-      <Suspense fallback={null}>
-        <Products />
-      </Suspense>
+      <B2BExport />
       <Footer />
       <WhatsAppButton />
     </main>

@@ -8,10 +8,10 @@ const navLinks = [
   { label: 'Home',          href: '/' },
   { label: 'About',         href: '/about' },
   { label: 'Products',      href: '/products' },
-  { label: 'Industries',    href: '/industries' },
+  { label: 'Pet Foods',     href: '/pet-foods' },
+  { label: 'B2B / Export',  href: '/b2b' },
   { label: 'Private Label', href: '/private-label' },
-  { label: 'Export',        href: '/export' },
-  { label: 'Contact',       href: '/contact' },
+  { label: 'Contact Us',    href: '/contact' },
 ];
 
 export default function Navbar() {

@@ -12,8 +12,8 @@ const NAV = [
   { to: "/products", label: "Products" },
   { to: "/pet-foods", label: "Pet Foods" },
   { to: "/b2b", label: "B2B / Export" },
-  { to: "/inquiry", label: "Inquiry" },
-  { to: "/contact", label: "Contact" },
+  { to: "/private-label", label: "Private Label" },
+  { to: "/contact", label: "Contact Us" },
 ] as const;
 
 export function TopUtilityBar() {
