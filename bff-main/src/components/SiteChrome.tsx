@@ -5,6 +5,7 @@ import { Menu, X, Phone } from "lucide-react";
 import { SocialIcons } from "./SocialIcons";
 import { FrostParticles } from "./FrostParticles";
 import { PHONE_DISPLAY, PHONE_TEL, buildWhatsAppLink } from "@/lib/whatsapp";
+import { UnifiedFooter } from "./UnifiedFooter";
 
 const NAV = [
   { to: "/", label: "Home" },
@@ -72,7 +73,7 @@ export function SiteNav() {
           </span>
         </Link>
 
-        <div className="hidden items-center gap-8 md:flex">
+        <div className="hidden items-center gap-7 md:flex pr-36">
           {NAV.map((n) => (
             <Link
               key={n.to}
@@ -191,51 +192,5 @@ export function WhatsAppFloat({ productName }: { productName?: string }) {
 }
 
 export function SiteFooter() {
-  return (
-    <footer className="relative overflow-hidden border-t border-white/5 bg-deep-navy pt-16 pb-8">
-      <div className="pointer-events-none absolute inset-0 opacity-40">
-        <div className="absolute -top-40 left-1/2 h-80 w-80 -translate-x-1/2 rounded-full bg-ice-blue/10 blur-3xl" />
-      </div>
-      <div className="relative mx-auto grid max-w-7xl grid-cols-1 gap-10 px-6 md:grid-cols-4">
-        <div className="md:col-span-2">
-          <div className="text-display text-3xl text-frost-white">BFF</div>
-          <p className="mt-2 text-sm font-medium uppercase tracking-[0.24em] text-steel-silver">
-            Bharat Freeze Dry Foods
-          </p>
-          <p className="mt-6 max-w-md text-sm leading-relaxed text-steel-silver">
-            Export-grade cold chain, from Bharat's farms to kitchens across the world.
-            Sourcing the best quality — freeze-dried at the peak, preserved for life.
-          </p>
-          <a
-            href={`tel:${PHONE_TEL}`}
-            className="mt-6 inline-flex items-center gap-2 text-lg font-semibold text-frost-white transition-colors hover:text-ice-blue"
-          >
-            <Phone className="h-4 w-4" /> {PHONE_DISPLAY}
-          </a>
-        </div>
-        <div>
-          <p className="text-eyebrow mb-4">Explore</p>
-          <ul className="space-y-2 text-sm text-steel-silver">
-            {NAV.map((n) => (
-              <li key={n.to}>
-                <Link to={n.to} className="transition-colors hover:text-ice-blue">
-                  {n.label}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div>
-          <p className="text-eyebrow mb-4">Follow</p>
-          <SocialIcons size={18} />
-          <p className="mt-6 text-xs text-steel-silver/70">
-            Made in Bharat, for the world.
-          </p>
-        </div>
-      </div>
-      <div className="relative mx-auto mt-12 max-w-7xl border-t border-white/5 px-6 pt-6 text-center text-xs text-steel-silver/60">
-        © {new Date().getFullYear()} Bharat Freeze Dry Foods. All rights reserved.
-      </div>
-    </footer>
-  );
+  return <UnifiedFooter />;
 }

@@ -14,11 +14,16 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import {
   SiteFooter,
   SiteNav,
-  TopUtilityBar,
   WhatsAppFloat,
 } from "@/components/SiteChrome";
 import { ScrollFrostLine } from "@/components/ScrollFrostLine";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { ThemeProvider, useTheme } from "@/lib/theme-context";
+
+// Light theme chrome imports
+import NavbarLight from "@/components/light/NavbarLight";
+import FooterLight from "@/components/light/FooterLight";
+import WhatsAppButtonLight from "@/components/light/WhatsAppButtonLight";
 
 function NotFoundComponent() {
   return (
@@ -105,7 +110,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Plus+Jakarta+Sans:ital,wght@0,200;0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400&family=Outfit:wght@100;200;300;400;500;600;700;800;900&display=swap",
       },
     ],
   }),
@@ -117,11 +122,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className="dark">
-      <head>
+    <html lang="en" className="dark" suppressHydrationWarning>
+      <head suppressHydrationWarning>
         <HeadContent />
       </head>
-      <body>
+      <body suppressHydrationWarning>
         {children}
         <Scripts />
       </body>
@@ -150,16 +155,54 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ScrollFrostLine />
-      <TopUtilityBar />
-      <SiteNav />
-      <main>
+      <ThemeProvider>
+        <ThemedApp />
+        <Toaster position="top-right" richColors />
+      </ThemeProvider>
+    </QueryClientProvider>
+  );
+}
+
+function ThemedApp() {
+  const { theme, mounted } = useTheme();
+
+  const isLight = mounted && theme === "light";
+
+  // Apply/remove light-theme class on body
+  useEffect(() => {
+    if (!mounted) return;
+    document.body.classList.toggle("light-theme", theme === "light");
+    document.body.classList.toggle("dark-theme", theme === "dark");
+  }, [theme, mounted]);
+
+  return (
+    <>
+      {isLight ? (
+        <NavbarLight />
+      ) : (
+        <>
+          <ScrollFrostLine />
+          <SiteNav />
+        </>
+      )}
+
+      <main suppressHydrationWarning style={isLight ? { paddingTop: 0 } : undefined}>
         <Outlet />
       </main>
-      <SiteFooter />
-      <WhatsAppFloat />
+
+      {isLight ? (
+        <>
+          <FooterLight />
+          <WhatsAppButtonLight />
+        </>
+      ) : (
+        <>
+          <SiteFooter />
+          <WhatsAppFloat />
+        </>
+      )}
+
       <ThemeToggle />
-      <Toaster position="top-right" richColors />
-    </QueryClientProvider>
+    </>
   );
 }

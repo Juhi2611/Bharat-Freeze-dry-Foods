@@ -1,6 +1,7 @@
 @import "tailwindcss" source(none);
-@source "../src";
 @import "tw-animate-css";
+@import "./light-globals.css";
+@source "../src";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -84,14 +85,13 @@
   --ring: #4FA8D8;
 }
 
-@layer base {
-  * {
-    border-color: var(--color-border);
-  }
-
-  html {
-    scroll-behavior: smooth;
-    background: var(--background);
+  .container {
+    width: 100%;
+    max-width: 1280px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 24px;
+    padding-right: 24px;
   }
 
   body {
@@ -238,3 +238,114 @@
   transform-origin: bottom left;
   animation: tail-wag 0.4s ease-in-out infinite;
 }
+
+/* ── Shared component classes: work in both light and dark themes ── */
+/* These mirror the light-globals.css btn styles but are globally scoped */
+/* so Contact, Products, and other shared components work in dark mode  */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 32px;
+  border-radius: 9999px;
+  font-family: 'Plus Jakarta Sans', 'Outfit', sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  text-decoration: none;
+  border: none;
+}
+.btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.btn:hover::before { opacity: 1; }
+
+.btn-primary {
+  background: #2D7A3A;
+  color: #ffffff;
+  box-shadow: 0 4px 20px rgba(45,122,58,0.35);
+}
+.btn-primary::before { background: #1A5C2A; }
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(45,122,58,0.45);
+}
+
+.btn-outline {
+  background: transparent;
+  color: #ffffff;
+  border: 2px solid rgba(255,255,255,0.5);
+  backdrop-filter: blur(10px);
+}
+.btn-outline:hover {
+  background: rgba(255,255,255,0.15);
+  border-color: #ffffff;
+  transform: translateY(-2px);
+}
+
+.btn-whatsapp {
+  background: #25D366;
+  color: white;
+  box-shadow: 0 4px 20px rgba(37,211,102,0.4);
+}
+.btn-whatsapp:hover {
+  background: #20bc5a;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(37,211,102,0.5);
+}
+
+/* Shared gradient text utilities */
+.gradient-text-green {
+  background: linear-gradient(135deg, #2D7A3A 0%, #8BC34A 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Shared form input base */
+.form-input {
+  display: block;
+  font-family: 'Outfit', sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+/* ─── Video overlay gradient ─────────────────────────────────────── */
+.video-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(5,15,8,0.7) 0%,
+    rgba(10,25,14,0.55) 50%,
+    rgba(5,15,8,0.8) 100%
+  );
+}
+
+/* ─── Hero subpage entrance animations ───────────────────────────── */
+@keyframes hero-fadein-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.hero-label-anim  { opacity: 0; animation: hero-fadein-up 0.8s cubic-bezier(0.16,1,0.3,1) 0.15s forwards; }
+.hero-h1-anim     { opacity: 0; animation: hero-fadein-up 1s   cubic-bezier(0.16,1,0.3,1) 0.3s  forwards; }
+.hero-p-anim      { opacity: 0; animation: hero-fadein-up 1s   cubic-bezier(0.16,1,0.3,1) 0.5s  forwards; }
+.hero-btns-anim   { opacity: 0; animation: hero-fadein-up 1s   cubic-bezier(0.16,1,0.3,1) 0.65s forwards; }
+
+/* Bounce animation for scroll indicators */
+@keyframes bounce {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50%       { transform: translateX(-50%) translateY(8px); }
+}
+.bounce { animation: bounce 2s ease-in-out infinite; }
