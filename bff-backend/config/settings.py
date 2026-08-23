@@ -103,10 +103,20 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-# Database Configuration
+# Database Configuration (MySQL via PyMySQL — set DATABASE_URL in .env)
 DATABASES = {
-    'default': env.db('DATABASE_URL', default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}")
+    'default': env.db(
+        'DATABASE_URL',
+        default='mysql://root:@127.0.0.1:3306/bff',
+    )
 }
+
+_db_engine = DATABASES['default'].get('ENGINE', '')
+if 'mysql' in _db_engine:
+    DATABASES['default'].setdefault('OPTIONS', {
+        'charset': 'utf8mb4',
+        'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+    })
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
