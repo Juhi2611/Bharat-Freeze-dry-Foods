@@ -35,6 +35,8 @@ export const Route = createFileRoute("/products")({
 function ProductsPage() {
   const { theme } = useTheme();
   const catalog = useCatalogData();
+  const navigate = useNavigate({ from: "/products" });
+  const { category } = Route.useSearch();
 
   if (theme === "light") {
     return (
@@ -63,9 +65,6 @@ function ProductsPage() {
   }
 
   // Dark theme
-  const navigate = useNavigate({ from: "/products" });
-  const { category } = Route.useSearch();
-
   const rawCategory =
     typeof category === "string"
       ? category.replace(/\+/g, " ")
