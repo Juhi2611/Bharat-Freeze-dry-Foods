@@ -231,6 +231,12 @@ EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')
 EMAIL_USE_TLS = env.bool('EMAIL_USE_TLS', default=True)
 DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='noreply@bff-foods.com')
 
+# Branded OTP emails
+OTP_EMAIL_SITE_NAME = env('OTP_EMAIL_SITE_NAME', default='Bharat Freeze Dry Foods')
+FRONTEND_URL = env('FRONTEND_URL', default='http://localhost:8080')
+# Optional: public HTTPS logo URL for emails (e.g. https://yoursite.com/logo.png)
+OTP_EMAIL_LOGO_URL = env('OTP_EMAIL_LOGO_URL', default='')
+
 # Unpaid checkout stock hold TTL (minutes). release_abandoned_orders restores
 # stock for orders older than this that never reached a paid/terminal status.
 ABANDONED_ORDER_TIMEOUT_MINUTES = env.int('ABANDONED_ORDER_TIMEOUT_MINUTES', default=45)

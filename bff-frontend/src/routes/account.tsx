@@ -41,7 +41,7 @@ function AccountLayout() {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-background px-4 text-center">
         <p className="text-sm text-steel-silver">
-          Sign in with your customer account to view orders and account details.
+          Sign in with your customer account to view your profile, orders, and account details.
         </p>
         <button
           type="button"

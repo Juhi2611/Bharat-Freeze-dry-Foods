@@ -1,6 +1,7 @@
 import { Link, createFileRoute } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { ArrowLeft, CheckCircle, CreditCard, Package } from 'lucide-react';
+import { AccountShell } from '@/components/account/AccountShell';
 import { api, type ApiOrder } from '@/services/api';
 
 declare global {
@@ -75,9 +76,8 @@ function MyOrderDetailPage() {
   };
 
   return (
-    <main className="min-h-screen bg-background px-4 pb-16 pt-28 text-frost-white sm:px-8">
-      <div className="mx-auto max-w-4xl">
-        <Link to="/account/orders" className="mb-8 inline-flex items-center gap-2 text-sm text-steel-silver hover:text-ice-blue"><ArrowLeft className="h-4 w-4" /> Back to my orders</Link>
+    <AccountShell>
+      <Link to="/account/orders" className="mb-8 inline-flex items-center gap-2 text-sm text-steel-silver hover:text-ice-blue"><ArrowLeft className="h-4 w-4" /> Back to my orders</Link>
         {isLoading && <p className="text-sm text-steel-silver">Loading order...</p>}
         {error && !order && <p className="rounded-xl border border-red-400/30 bg-red-400/10 p-4 text-sm text-red-200">{error}</p>}
         {order && (
@@ -100,7 +100,6 @@ function MyOrderDetailPage() {
             {error && <p className="mt-4 text-sm text-red-300">{error}</p>}
           </>
         )}
-      </div>
-    </main>
+    </AccountShell>
   );
 }

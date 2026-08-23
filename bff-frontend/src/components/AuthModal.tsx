@@ -295,6 +295,18 @@ export const AuthModal: React.FC = () => {
               <p className="mt-1.5 text-[11px] text-slate-500">
                 OTP expires in 10 minutes. Check your email inbox (and spam).
               </p>
+              <button
+                type="button"
+                onClick={handleSendOtp}
+                disabled={isSendingOtp || resendCooldown > 0}
+                className="mt-2 text-[11px] font-semibold text-sky-400 hover:text-sky-300 disabled:opacity-50"
+              >
+                {isSendingOtp
+                  ? 'Sending new code…'
+                  : resendCooldown > 0
+                    ? `Resend OTP in ${resendCooldown}s`
+                    : 'Resend OTP'}
+              </button>
             </div>
           )}
 

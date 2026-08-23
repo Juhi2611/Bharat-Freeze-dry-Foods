@@ -6,8 +6,10 @@ from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenRefreshSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
+from django.conf import settings
+import logging
 
-from apps.crm.services import ensure_customer_for_user
+from apps.crm.services import ensure_customer_for_user, sync_customer_profile_from_user
 from apps.users.permissions import IsSuperAdmin
 
 from .auth_cookies import (
@@ -22,9 +24,12 @@ from .otp import OTP_SEND_SUCCESS_DETAIL, create_and_send_otp, verify_otp
 from .serializers import (
 	RegisterSerializer,
 	SendOTPSerializer,
+	MeUpdateSerializer,
 	UserSerializer,
 	VerifyOTPSerializer,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class SendOTPIPThrottle(AnonRateThrottle):
@@ -47,6 +52,19 @@ class MeView(APIView):
 			ensure_customer_for_user(request.user)
 		serializer = UserSerializer(request.user)
 		return Response(serializer.data)
+
+	def patch(self, request):
+		serializer = MeUpdateSerializer(
+			request.user,
+			data=request.data,
+			partial=True,
+		)
+		if not serializer.is_valid():
+			return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+		user = serializer.save()
+		if user.role == User.Role.CUSTOMER:
+			sync_customer_profile_from_user(user)
+		return Response(UserSerializer(user).data)
 
 
 class CsrfCookieView(APIView):
@@ -167,9 +185,10 @@ class SendEmailOTPView(APIView):
 		except ValueError as exc:
 			# Per-email resend cooldown — does not leak whether the account exists.
 			return Response({'error': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
-		except Exception:
+		except Exception as exc:
+			logger.exception('OTP email send failed for %s', serializer.validated_data.get('email'))
 			return Response(
-				{'error': 'Unable to send verification email. Please try again later.'},
+				{'error': 'Unable to send verification email. Please try again in a minute.'},
 				status=status.HTTP_503_SERVICE_UNAVAILABLE,
 			)
 

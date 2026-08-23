@@ -125,13 +125,22 @@ export function SiteNav() {
                       </Link>
                     )}
                     {user.role === "customer" && (
-                      <Link
-                        to="/account/orders"
-                        onClick={() => setShowUserDropdown(false)}
-                        className="block rounded-lg px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800"
-                      >
-                        My Orders
-                      </Link>
+                      <>
+                        <Link
+                          to="/account"
+                          onClick={() => setShowUserDropdown(false)}
+                          className="block rounded-lg px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800"
+                        >
+                          My Profile
+                        </Link>
+                        <Link
+                          to="/account/orders"
+                          onClick={() => setShowUserDropdown(false)}
+                          className="block rounded-lg px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800"
+                        >
+                          My Orders
+                        </Link>
+                      </>
                     )}
                     <button
                       type="button"

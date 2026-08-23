@@ -168,9 +168,14 @@ export default function NavbarLight() {
                   </Link>
                 )}
                 {user.role === 'customer' && (
-                  <Link to="/account/orders" onClick={() => setShowUserDropdown(false)} style={{ display: 'block', width: '100%', padding: '9px 10px', color: 'var(--text-dark)', fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>
-                    My Orders
-                  </Link>
+                  <>
+                    <Link to="/account" onClick={() => setShowUserDropdown(false)} style={{ display: 'block', width: '100%', padding: '9px 10px', color: 'var(--text-dark)', fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>
+                      My Profile
+                    </Link>
+                    <Link to="/account/orders" onClick={() => setShowUserDropdown(false)} style={{ display: 'block', width: '100%', padding: '9px 10px', color: 'var(--text-dark)', fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>
+                      My Orders
+                    </Link>
+                  </>
                 )}
                 <button type="button" onClick={() => { logout(); setShowUserDropdown(false); }} style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '9px 10px', color: 'var(--red)', fontSize: 12, fontWeight: 700, background: 'transparent', border: 'none', cursor: 'pointer' }}>
                   <LogOut size={14} /> Sign Out

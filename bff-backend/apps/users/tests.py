@@ -330,6 +330,35 @@ class AuthenticationTests(APITestCase):
 		crm_customer.refresh_from_db()
 		self.assertEqual(crm_customer.user_id, self.customer.id)
 
+	def test_customer_can_update_profile_via_patch(self):
+		crm_customer = Customer.objects.create(
+			full_name='Customer User',
+			company_name='',
+			email=self.customer.email,
+			phone='',
+			country='',
+			user=self.customer,
+		)
+		refresh = RefreshToken.for_user(self.customer)
+		self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}')
+
+		response = self.client.patch('/api/v1/auth/me/', {
+			'full_name': 'Updated Name',
+			'company_name': 'Updated Company',
+			'country': 'India',
+		})
+
+		self.assertEqual(response.status_code, status.HTTP_200_OK)
+		self.assertEqual(response.data['full_name'], 'Updated Name')
+		self.assertEqual(response.data['company_name'], 'Updated Company')
+		self.assertEqual(response.data['country'], 'India')
+		self.customer.refresh_from_db()
+		self.assertEqual(self.customer.full_name, 'Updated Name')
+		crm_customer.refresh_from_db()
+		self.assertEqual(crm_customer.full_name, 'Updated Name')
+		self.assertEqual(crm_customer.company_name, 'Updated Company')
+		self.assertEqual(crm_customer.country, 'India')
+
 	def test_existing_customer_linked_to_another_user_is_not_relinked(self):
 		other_user = User.objects.create_user(
 			email='other@example.com',

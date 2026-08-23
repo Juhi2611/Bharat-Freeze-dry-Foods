@@ -21,6 +21,7 @@ interface AuthContextType {
     country?: string;
   }) => Promise<void>;
   logout: (redirectTo?: string) => void;
+  refreshUser: () => Promise<UserProfile | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -73,6 +74,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(res.user);
   };
 
+  const refreshUser = async () => {
+    try {
+      const profile = await api.getMe();
+      setUser(profile);
+      return profile;
+    } catch {
+      clearStoredTokens();
+      setUser(null);
+      return null;
+    }
+  };
+
   const logout = (redirectTo?: string) => {
     void (async () => {
       try {
@@ -96,6 +109,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         login,
         register,
         logout,
+        refreshUser,
       }}
     >
       {children}

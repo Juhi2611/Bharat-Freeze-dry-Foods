@@ -20,6 +20,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AccountRouteImport } from './routes/account'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AccountIndexRouteImport } from './routes/account/index'
 import { Route as AdminLoginRouteImport } from './routes/admin/login'
 import { Route as AccountOrdersRouteImport } from './routes/account/orders'
 import { Route as AccountOrdersIdRouteImport } from './routes/account/orders/$id'
@@ -79,6 +80,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountIndexRoute = AccountIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AccountRoute,
+} as any)
 const AdminLoginRoute = AdminLoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -109,12 +115,12 @@ export interface FileRoutesByFullPath {
   '/recipes': typeof RecipesRoute
   '/account/orders': typeof AccountOrdersRouteWithChildren
   '/admin/login': typeof AdminLoginRoute
+  '/account/': typeof AccountIndexRoute
   '/account/orders/$id': typeof AccountOrdersIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/account': typeof AccountRouteWithChildren
   '/admin': typeof AdminRouteWithChildren
   '/b2b': typeof B2bRoute
   '/contact': typeof ContactRoute
@@ -125,6 +131,7 @@ export interface FileRoutesByTo {
   '/recipes': typeof RecipesRoute
   '/account/orders': typeof AccountOrdersRouteWithChildren
   '/admin/login': typeof AdminLoginRoute
+  '/account': typeof AccountIndexRoute
   '/account/orders/$id': typeof AccountOrdersIdRoute
 }
 export interface FileRoutesById {
@@ -142,6 +149,7 @@ export interface FileRoutesById {
   '/recipes': typeof RecipesRoute
   '/account/orders': typeof AccountOrdersRouteWithChildren
   '/admin/login': typeof AdminLoginRoute
+  '/account/': typeof AccountIndexRoute
   '/account/orders/$id': typeof AccountOrdersIdRoute
 }
 export interface FileRouteTypes {
@@ -160,12 +168,12 @@ export interface FileRouteTypes {
     | '/recipes'
     | '/account/orders'
     | '/admin/login'
+    | '/account/'
     | '/account/orders/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/about'
-    | '/account'
     | '/admin'
     | '/b2b'
     | '/contact'
@@ -176,6 +184,7 @@ export interface FileRouteTypes {
     | '/recipes'
     | '/account/orders'
     | '/admin/login'
+    | '/account'
     | '/account/orders/$id'
   id:
     | '__root__'
@@ -192,6 +201,7 @@ export interface FileRouteTypes {
     | '/recipes'
     | '/account/orders'
     | '/admin/login'
+    | '/account/'
     | '/account/orders/$id'
   fileRoutesById: FileRoutesById
 }
@@ -288,6 +298,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/account/': {
+      id: '/account/'
+      path: '/'
+      fullPath: '/account/'
+      preLoaderRoute: typeof AccountIndexRouteImport
+      parentRoute: typeof AccountRoute
+    }
     '/admin/login': {
       id: '/admin/login'
       path: '/login'
@@ -326,10 +343,12 @@ const AccountOrdersRouteWithChildren = AccountOrdersRoute._addFileChildren(
 
 interface AccountRouteChildren {
   AccountOrdersRoute: typeof AccountOrdersRouteWithChildren
+  AccountIndexRoute: typeof AccountIndexRoute
 }
 
 const AccountRouteChildren: AccountRouteChildren = {
   AccountOrdersRoute: AccountOrdersRouteWithChildren,
+  AccountIndexRoute: AccountIndexRoute,
 }
 
 const AccountRouteWithChildren =

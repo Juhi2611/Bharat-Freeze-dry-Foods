@@ -11,6 +11,7 @@ from django.core.mail import send_mail
 from django.utils import timezone
 
 from .models import EmailOTP, User
+from .otp_email import render_otp_email_html, render_otp_email_text
 
 OTP_LENGTH = 6
 OTP_TTL_MINUTES = 10
@@ -78,17 +79,24 @@ def create_and_send_otp(email: str) -> Optional[EmailOTP]:
 		expires_at=timezone.now() + timedelta(minutes=OTP_TTL_MINUTES),
 	)
 
-	send_mail(
-		subject='Your BFF verification code',
-		message=(
-			f'Your Bharat Freeze Dry Foods verification code is {code}.\n\n'
-			f'This code expires in {OTP_TTL_MINUTES} minutes. '
-			'If you did not request this, you can ignore this email.'
-		),
-		from_email=settings.DEFAULT_FROM_EMAIL,
-		recipient_list=[email],
-		fail_silently=False,
-	)
+	try:
+		send_mail(
+			subject='Your BFF verification code',
+			message=render_otp_email_text(code=code, ttl_minutes=OTP_TTL_MINUTES),
+			from_email=settings.DEFAULT_FROM_EMAIL,
+			recipient_list=[email],
+			html_message=render_otp_email_html(code=code, ttl_minutes=OTP_TTL_MINUTES),
+			fail_silently=False,
+		)
+	except Exception:
+		# Do not leave a usable OTP when delivery failed.
+		otp.delete()
+		raise
+
+	# Local/dev visibility when SMTP is misconfigured — still only after successful send.
+	if settings.DEBUG:
+		print(f'[OTP] sent to {email}: {code}')
+
 	return otp
 
 

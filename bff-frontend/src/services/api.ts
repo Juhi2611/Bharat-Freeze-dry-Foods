@@ -17,6 +17,8 @@ export interface UserProfile {
   country?: string;
   role: 'super_admin' | 'export_manager' | 'content_editor' | 'customer';
   avatar_url?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface AuthTokens {
@@ -508,6 +510,12 @@ export const api = {
   },
 
   getMe: (): Promise<UserProfile> => request<UserProfile>('/auth/me/'),
+
+  updateMe: (data: Partial<Pick<UserProfile, 'full_name' | 'company_name' | 'country' | 'avatar_url'>>) =>
+    request<UserProfile>('/auth/me/', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
 
   // Catalog
   getProducts: (categorySlug?: string): Promise<{ results: ApiProduct[] } | ApiProduct[]> => {

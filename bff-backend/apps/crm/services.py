@@ -53,3 +53,14 @@ def ensure_customer_for_user(user: User) -> Customer:
         return _create_customer_for_user(user)
 
     return _create_customer_for_user(user)
+
+
+def sync_customer_profile_from_user(user: User) -> None:
+    """Keep linked CRM customer in sync when the user updates their profile."""
+    customer = Customer.objects.filter(user=user).first()
+    if not customer:
+        return
+    customer.full_name = user.full_name
+    customer.company_name = user.company_name or ''
+    customer.country = user.country or ''
+    customer.save(update_fields=['full_name', 'company_name', 'country'])

@@ -18,7 +18,19 @@ class UserSerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at',
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'email', 'role', 'created_at', 'updated_at']
+
+
+class MeUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['full_name', 'company_name', 'country', 'avatar_url']
+
+    def validate_full_name(self, value):
+        cleaned = (value or '').strip()
+        if not cleaned:
+            raise serializers.ValidationError('Full name is required.')
+        return cleaned
 
 
 class RegisterSerializer(serializers.ModelSerializer):
