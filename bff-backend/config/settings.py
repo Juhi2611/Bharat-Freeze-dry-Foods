@@ -242,11 +242,16 @@ if not DEBUG and not CSRF_TRUSTED_ORIGINS:
         '(comma-separated frontend origins, e.g. https://www.example.com).'
     )
 
-# F5 refresh cookie: httpOnly; Secure in production; SameSite=Lax for same-site
-# SPA<->API (e.g. www + api subdomains). Use SameSite=None only if frontend and API
-# are truly cross-site (different registrable domains) — then Secure must be True.
+# F5 refresh cookie & Django CSRF/Session cookie cross-site settings:
+# For cross-domain SPA (Vercel) <-> API (Railway), SameSite MUST be 'None' and Secure MUST be True.
 REFRESH_COOKIE_SECURE = env.bool('REFRESH_COOKIE_SECURE', default=not DEBUG)
-REFRESH_COOKIE_SAMESITE = env('REFRESH_COOKIE_SAMESITE', default='Lax')
+REFRESH_COOKIE_SAMESITE = env('REFRESH_COOKIE_SAMESITE', default='None' if not DEBUG else 'Lax')
+
+CSRF_COOKIE_SECURE = env.bool('CSRF_COOKIE_SECURE', default=not DEBUG)
+CSRF_COOKIE_SAMESITE = env('CSRF_COOKIE_SAMESITE', default='None' if not DEBUG else 'Lax')
+
+SESSION_COOKIE_SECURE = env.bool('SESSION_COOKIE_SECURE', default=not DEBUG)
+SESSION_COOKIE_SAMESITE = env('SESSION_COOKIE_SAMESITE', default='None' if not DEBUG else 'Lax')
 
 # OpenAPI Schema Metadata
 SPECTACULAR_SETTINGS = {
