@@ -73,7 +73,10 @@ export interface Product {
   name: string;
   category: Category;
   packImage: string;
+  packImageTransparent?: string;
   ingredientImage: string;
+  ingredientImageTransparent?: string;
+  bgRemovalStatus?: string;
   accent: string;
   price: string;
   organic?: boolean;

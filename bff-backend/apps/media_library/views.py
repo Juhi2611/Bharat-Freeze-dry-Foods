@@ -14,11 +14,15 @@ from .models import MediaFile
 from .serializers import MediaFileSerializer
 from apps.users.permissions import IsContentStaff
 
-ALLOWED_IMAGE_TYPES = {
+ALLOWED_MEDIA_TYPES = {
 	'image/jpeg': '.jpg',
 	'image/png': '.png',
 	'image/webp': '.webp',
 	'image/gif': '.gif',
+	'video/mp4': '.mp4',
+	'video/webm': '.webm',
+	'video/ogg': '.ogv',
+	'video/quicktime': '.mov',
 }
 
 
@@ -40,16 +44,18 @@ class MediaFileViewSet(viewsets.ModelViewSet):
 
 	def _create_from_upload(self, request, upload):
 		content_type = (upload.content_type or '').lower()
-		ext = ALLOWED_IMAGE_TYPES.get(content_type)
+		ext = ALLOWED_MEDIA_TYPES.get(content_type)
 		if not ext:
 			raise serializers.ValidationError({
-				'file': 'Only JPEG, PNG, WEBP, or GIF images are allowed.',
+				'file': 'Only JPEG, PNG, WEBP, GIF images or MP4, WEBM, OGV, MOV videos are allowed.',
 			})
 
-		max_bytes = 10 * 1024 * 1024
+		is_video = content_type.startswith('video/')
+		max_bytes = 50 * 1024 * 1024 if is_video else 10 * 1024 * 1024
 		if upload.size > max_bytes:
+			max_label = '50MB' if is_video else '10MB'
 			raise serializers.ValidationError({
-				'file': 'Image must be 10MB or smaller.',
+				'file': f'File must be {max_label} or smaller.',
 			})
 
 		safe_stem = Path(upload.name or 'upload').stem[:80] or 'upload'
@@ -63,9 +69,12 @@ class MediaFileViewSet(viewsets.ModelViewSet):
 			absolute_url = relative_url
 
 		size_mb = Decimal(upload.size) / Decimal(1024 * 1024)
+		transparent_url = ""
+
 		media = MediaFile.objects.create(
 			file_name=upload.name or Path(saved_path).name,
 			file_url=absolute_url,
+			transparent_file_url=transparent_url,
 			file_size_mb=size_mb.quantize(Decimal('0.01')),
 			dimensions=request.data.get('dimensions', '') or '',
 			category=request.data.get('category', 'Categories') or 'Categories',

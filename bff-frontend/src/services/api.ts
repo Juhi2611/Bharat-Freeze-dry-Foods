@@ -35,7 +35,10 @@ export interface ApiProduct {
   category_name?: string;
   category_slug?: string;
   pack_image: string;
+  pack_image_transparent?: string;
   ingredient_image: string;
+  ingredient_image_transparent?: string;
+  bg_removal_status?: string;
   accent_color: string;
   price_inr: string | number;
   is_organic: boolean;
@@ -200,6 +203,7 @@ export interface ApiMediaFile {
   id: string;
   file_name: string;
   file_url: string;
+  transparent_file_url?: string;
   file_size_mb: string | number;
   dimensions: string;
   category: string;

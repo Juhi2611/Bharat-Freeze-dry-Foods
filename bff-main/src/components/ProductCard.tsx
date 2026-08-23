@@ -6,16 +6,22 @@ import { Leaf, Minus, Plus, Play } from "lucide-react";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
 import type { Product } from "@/lib/products";
 import { InteractiveExperienceModal } from "./InteractiveExperienceModal";
+import { isVideoUrl } from "@/lib/utils";
+import { MediaBackground } from "./MediaBackground";
 
 export function ProductCard({ product }: { product: Product }) {
   const [hover, setHover] = useState(false);
   const [qty, setQty] = useState(1);
   const [modalOpen, setModalOpen] = useState(false);
+  const waLink = buildWhatsAppLink(product.name, qty);
 
   const active = hover;
   const hasRecipe = !!product.recipe;
   const hasInteractiveExp = !!product.interactiveExperience;
-  const hoverVideo = hasInteractiveExp ? product.interactiveExperience!.videoUrl : (hasRecipe ? product.recipe?.videoUrl : null);
+  const isIngredientVideo = isVideoUrl(product.ingredientImage);
+  const hoverVideo = hasInteractiveExp 
+    ? product.interactiveExperience!.videoUrl 
+    : (hasRecipe ? product.recipe?.videoUrl : (isIngredientVideo ? product.ingredientImage : null));
 
   return (
     <Tilt
@@ -46,44 +52,38 @@ export function ProductCard({ product }: { product: Product }) {
       >
         {/* Accent glow */}
         <div
-          className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+          className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100 z-10"
           style={{
             background: `radial-gradient(ellipse at 50% 0%, ${product.accent}20, transparent 60%)`,
           }}
         />
 
         {/* Image stack */}
-        <div className="relative aspect-[4/5] w-full overflow-hidden bg-deep-navy">
-          <img
-            src={product.packImage}
-            alt={product.name}
-            className={`absolute inset-0 h-full w-full object-cover transition-all duration-[600ms] ease-out ${
+        <div className="relative aspect-[4/5] w-full overflow-hidden">
+          <div
+            className={`absolute inset-0 transition-all duration-[600ms] ease-out ${
               active ? "scale-110 opacity-0" : "scale-100 opacity-100"
             }`}
-            loading="lazy"
-          />
-          {hoverVideo ? (
-            <video
-              src={hoverVideo}
-              autoPlay
-              muted
-              loop
-              playsInline
-              className={`absolute inset-0 h-full w-full object-cover transition-all duration-[600ms] ease-out ${
-                active ? "scale-105 opacity-100 translate-y-0" : "scale-110 opacity-0 translate-y-2"
-              }`}
-            />
-          ) : (
-            <img
-              src={product.ingredientImage}
-              alt=""
-              aria-hidden
-              className={`absolute inset-0 h-full w-full object-cover transition-all duration-[600ms] ease-out ${
-                active ? "scale-105 opacity-100 translate-y-0" : "scale-110 opacity-0 translate-y-2"
-              }`}
+          >
+            <MediaBackground
+              src={product.packImage}
+              alt={product.name}
               loading="lazy"
             />
-          )}
+          </div>
+          <div
+            className={`absolute inset-0 transition-all duration-[600ms] ease-out ${
+              active ? "scale-105 opacity-100 translate-y-0" : "scale-110 opacity-0 translate-y-2"
+            }`}
+          >
+            <MediaBackground
+              src={hoverVideo || product.ingredientImage}
+              alt={product.name}
+              isVideo={!!hoverVideo}
+              active={active}
+              loading="lazy"
+            />
+          </div>
 
           {/* Badges */}
           <div className="absolute left-3 top-3 flex flex-col gap-1.5">

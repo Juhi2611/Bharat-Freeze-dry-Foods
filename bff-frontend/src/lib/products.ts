@@ -37,7 +37,10 @@ export interface Product {
   name: string;
   category: Category;
   packImage: string;
+  packImageTransparent?: string;
   ingredientImage: string;
+  ingredientImageTransparent?: string;
+  bgRemovalStatus?: string;
   accent: string;
   price: string;
   organic?: boolean;
@@ -80,7 +83,10 @@ export const mapApiProduct = (product: ApiProduct): Product => ({
   name: product.name,
   category: product.category_name || 'Uncategorized',
   packImage: product.pack_image,
+  packImageTransparent: product.pack_image_transparent || undefined,
   ingredientImage: product.ingredient_image,
+  ingredientImageTransparent: product.ingredient_image_transparent || undefined,
+  bgRemovalStatus: product.bg_removal_status || undefined,
   accent: product.accent_color,
   price: `₹${Number(product.price_inr).toLocaleString('en-IN')}`,
   organic: product.is_organic,

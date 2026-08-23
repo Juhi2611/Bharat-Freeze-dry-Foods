@@ -12,10 +12,13 @@ import {
   Sparkles,
   X,
   Image as ImageIcon,
+  Film,
 } from "lucide-react";
 import { useCatalogData } from "@/hooks/useCatalogData";
 import type { AdminTab } from "./AdminSidebar";
 import { api } from "@/services/api";
+import { isVideoUrl } from "@/lib/utils";
+import { MediaBackground } from "../MediaBackground";
 
 interface AdminAddProductProps {
   setActiveTab: (tab: AdminTab) => void;
@@ -29,6 +32,7 @@ export function AdminAddProduct({ setActiveTab, editSlug, defaultCategoryId, onC
   const { categories } = useCatalogData();
   const [loading, setLoading] = useState(false);
   const [loadingProduct, setLoadingProduct] = useState(false);
+  const [previewHover, setPreviewHover] = useState(false);
   const [uploadingField, setUploadingField] = useState<"pack" | "ingredient" | null>(null);
   const packInputRef = useRef<HTMLInputElement>(null);
   const ingredientInputRef = useRef<HTMLInputElement>(null);
@@ -40,7 +44,9 @@ export function AdminAddProduct({ setActiveTab, editSlug, defaultCategoryId, onC
     blurb: "",
     description: "",
     packImage: "",
+    packImageTransparent: "",
     ingredientImage: "",
+    ingredientImageTransparent: "",
     stock: "0",
     privateLabel: true,
     exportReady: true,
@@ -61,7 +67,9 @@ export function AdminAddProduct({ setActiveTab, editSlug, defaultCategoryId, onC
           blurb: product.blurb || "",
           description: product.full_description || "",
           packImage: product.pack_image || "",
+          packImageTransparent: product.pack_image_transparent || "",
           ingredientImage: product.ingredient_image || "",
+          ingredientImageTransparent: product.ingredient_image_transparent || "",
           stock: String(product.stock_quantity ?? 0),
           privateLabel: product.white_label_available ?? true,
           exportReady: product.export_ready ?? true,
@@ -96,8 +104,14 @@ export function AdminAddProduct({ setActiveTab, editSlug, defaultCategoryId, onC
 
   const uploadImage = async (file: File | undefined, field: "pack" | "ingredient") => {
     if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      toast.error("Please choose an image file.");
+    const isVideo = file.type.startsWith("video/");
+    const isImage = file.type.startsWith("image/");
+    if (field === "pack" && !isImage) {
+      toast.error("Please choose an image file for the pack render.");
+      return;
+    }
+    if (field === "ingredient" && !isImage && !isVideo) {
+      toast.error("Please choose a photo or video file for the ingredient shot.");
       return;
     }
     setUploadingField(field);
@@ -106,8 +120,15 @@ export function AdminAddProduct({ setActiveTab, editSlug, defaultCategoryId, onC
       setFormData((prev) => ({
         ...prev,
         [field === "pack" ? "packImage" : "ingredientImage"]: uploaded.file_url,
+        [field === "pack" ? "packImageTransparent" : "ingredientImageTransparent"]: "",
       }));
-      toast.success(field === "pack" ? "Pack image uploaded" : "Ingredient image uploaded");
+      toast.success(
+        field === "pack"
+          ? "Pack image uploaded"
+          : isVideo
+          ? "Ingredient video uploaded"
+          : "Ingredient photo uploaded"
+      );
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Upload failed.");
     } finally {
@@ -126,8 +147,10 @@ export function AdminAddProduct({ setActiveTab, editSlug, defaultCategoryId, onC
       name: formData.name.trim(),
       category: formData.categoryId || undefined,
       pack_image: formData.packImage || "https://placehold.co/800x800/0F1A28/EAF6FB?text=BFF",
+      pack_image_transparent: formData.packImageTransparent || undefined,
       ingredient_image:
         formData.ingredientImage || formData.packImage || "https://placehold.co/800x800/0F1A28/EAF6FB?text=BFF",
+      ingredient_image_transparent: formData.ingredientImageTransparent || undefined,
       price_inr: Number(formData.price) || 0,
       blurb: formData.blurb || formData.name,
       full_description: formData.description,
@@ -169,81 +192,115 @@ export function AdminAddProduct({ setActiveTab, editSlug, defaultCategoryId, onC
       .finally(() => setLoading(false));
   };
 
-  const ImageSlot = ({
+  const MediaSlot = ({
     label,
     hint,
     url,
     field,
     inputRef,
+    allowVideo = false,
   }: {
     label: string;
     hint: string;
     url: string;
     field: "pack" | "ingredient";
     inputRef: React.RefObject<HTMLInputElement | null>;
-  }) => (
-    <div className="space-y-2">
-      <p className="text-[0.65rem] font-semibold uppercase tracking-wider text-steel-silver">{label}</p>
-      <div className="relative overflow-hidden rounded-xl border border-white/10 bg-deep-navy/60">
-        {url ? (
-          <div className="relative h-36">
-            <img src={url} alt={label} className="h-full w-full object-cover" />
+    allowVideo?: boolean;
+  }) => {
+    const isVideo = allowVideo && isVideoUrl(url);
+
+    return (
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <p className="text-[0.65rem] font-semibold uppercase tracking-wider text-steel-silver">{label}</p>
+          {url && (
+            <span className="inline-flex items-center gap-1 rounded bg-white/10 px-1.5 py-0.5 text-[0.6rem] font-bold uppercase tracking-wider text-ice-blue">
+              {isVideo ? <Film className="h-3 w-3" /> : <ImageIcon className="h-3 w-3" />}
+              {isVideo ? "Video" : "Photo"}
+            </span>
+          )}
+        </div>
+        <div className="relative overflow-hidden rounded-xl border border-white/10 bg-deep-navy/60">
+          {url ? (
+            <div className="relative h-36">
+              {isVideo ? (
+                <video
+                  src={url}
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <img src={url} alt={label} className="h-full w-full object-cover" />
+              )}
+              <button
+                type="button"
+                onClick={() =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    [field === "pack" ? "packImage" : "ingredientImage"]: "",
+                  }))
+                }
+                className="absolute right-2 top-2 rounded-lg bg-deep-navy/80 p-1 text-steel-silver hover:text-white transition-colors"
+                title="Remove media"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          ) : (
             <button
               type="button"
-              onClick={() =>
-                setFormData((prev) => ({
-                  ...prev,
-                  [field === "pack" ? "packImage" : "ingredientImage"]: "",
-                }))
-              }
-              className="absolute right-2 top-2 rounded-lg bg-deep-navy/80 p-1 text-steel-silver hover:text-white"
+              disabled={uploadingField === field}
+              onClick={() => inputRef.current?.click()}
+              className="flex h-36 w-full flex-col items-center justify-center gap-2 text-center transition-colors hover:bg-white/5"
             >
-              <X className="h-3.5 w-3.5" />
+              {uploadingField === field ? (
+                <Loader2 className="h-6 w-6 animate-spin text-ice-blue" />
+              ) : (
+                <UploadCloud className="h-7 w-7 text-ice-blue" />
+              )}
+              <span className="text-xs font-semibold text-frost-white">
+                {uploadingField === field
+                  ? "Uploading…"
+                  : allowVideo
+                  ? "Upload Photo or Video"
+                  : "Upload from device"}
+              </span>
+              <span className="px-3 text-[0.6rem] text-steel-silver">{hint}</span>
             </button>
-          </div>
-        ) : (
-          <button
-            type="button"
-            disabled={uploadingField === field}
-            onClick={() => inputRef.current?.click()}
-            className="flex h-36 w-full flex-col items-center justify-center gap-2 text-center transition-colors hover:bg-white/5"
-          >
-            {uploadingField === field ? (
-              <Loader2 className="h-6 w-6 animate-spin text-ice-blue" />
-            ) : (
-              <UploadCloud className="h-7 w-7 text-ice-blue" />
-            )}
-            <span className="text-xs font-semibold text-frost-white">
-              {uploadingField === field ? "Uploading…" : "Upload from device"}
-            </span>
-            <span className="px-3 text-[0.6rem] text-steel-silver">{hint}</span>
-          </button>
-        )}
+          )}
+        </div>
+        <input
+          ref={inputRef}
+          type="file"
+          accept={
+            allowVideo
+              ? "image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/ogg,video/quicktime"
+              : "image/jpeg,image/png,image/webp,image/gif"
+          }
+          className="hidden"
+          onChange={(e) => {
+            void uploadImage(e.target.files?.[0], field);
+            e.target.value = "";
+          }}
+        />
+        <input
+          type="url"
+          value={url}
+          onChange={(e) =>
+            setFormData((prev) => ({
+              ...prev,
+              [field === "pack" ? "packImage" : "ingredientImage"]: e.target.value,
+            }))
+          }
+          placeholder={allowVideo ? "Or paste photo / video URL…" : "Or paste image URL…"}
+          className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-[0.7rem] text-frost-white focus:border-ice-blue focus:outline-none"
+        />
       </div>
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/jpeg,image/png,image/webp,image/gif"
-        className="hidden"
-        onChange={(e) => {
-          void uploadImage(e.target.files?.[0], field);
-          e.target.value = "";
-        }}
-      />
-      <input
-        type="url"
-        value={url}
-        onChange={(e) =>
-          setFormData((prev) => ({
-            ...prev,
-            [field === "pack" ? "packImage" : "ingredientImage"]: e.target.value,
-          }))
-        }
-        placeholder="Or paste image URL…"
-        className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-[0.7rem] text-frost-white focus:border-ice-blue focus:outline-none"
-      />
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="w-full space-y-4 pb-8">
@@ -374,22 +431,23 @@ export function AdminAddProduct({ setActiveTab, editSlug, defaultCategoryId, onC
 
           <section className="rounded-2xl border border-white/10 bg-card/60 p-4 backdrop-blur-xl sm:p-5">
             <h3 className="mb-3 flex items-center gap-2 text-sm font-bold text-frost-white">
-              <ImageIcon className="h-4 w-4 text-ice-blue" /> Images
+              <ImageIcon className="h-4 w-4 text-ice-blue" /> Media & Renders
             </h3>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <ImageSlot
+              <MediaSlot
                 label="Pack render"
                 hint="PNG / WebP / JPG · max 10MB"
                 url={formData.packImage}
                 field="pack"
                 inputRef={packInputRef}
               />
-              <ImageSlot
+              <MediaSlot
                 label="Ingredient shot"
-                hint="Shown on hover / detail"
+                hint="Photo or Video · shown on hover"
                 url={formData.ingredientImage}
                 field="ingredient"
                 inputRef={ingredientInputRef}
+                allowVideo
               />
             </div>
           </section>
@@ -461,18 +519,28 @@ export function AdminAddProduct({ setActiveTab, editSlug, defaultCategoryId, onC
           </section>
 
           <section className="overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-ice-blue/10 via-card/70 to-deep-navy p-4">
-            <h3 className="mb-3 flex items-center gap-2 text-sm font-bold text-frost-white">
-              <Globe2 className="h-4 w-4 text-ice-blue" /> Live preview
-            </h3>
-            <div className="overflow-hidden rounded-xl border border-white/10 bg-deep-navy/80">
-              <div className="relative h-40 bg-white/5">
-                {formData.packImage ? (
-                  <img src={formData.packImage} alt="" className="h-full w-full object-cover" />
-                ) : (
-                  <div className="flex h-full items-center justify-center text-steel-silver">
-                    <ImageIcon className="h-8 w-8 opacity-40" />
-                  </div>
-                )}
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="flex items-center gap-2 text-sm font-bold text-frost-white">
+                <Globe2 className="h-4 w-4 text-ice-blue" /> Live preview
+              </h3>
+              <span className="text-[0.65rem] text-steel-silver">Hover card to test media</span>
+            </div>
+            <div
+              className="group overflow-hidden rounded-xl border border-white/10 bg-deep-navy/80 transition-all duration-300 hover:border-ice-blue/50"
+              onMouseEnter={() => setPreviewHover(true)}
+              onMouseLeave={() => setPreviewHover(false)}
+            >
+              <div className="relative h-40 overflow-hidden">
+                <MediaBackground
+                  src={
+                    previewHover && formData.ingredientImage
+                      ? formData.ingredientImage
+                      : formData.packImage || "https://placehold.co/800x800/0F1A28/EAF6FB?text=BFF"
+                  }
+                  alt={formData.name}
+                  isVideo={previewHover && isVideoUrl(formData.ingredientImage)}
+                  active={previewHover}
+                />
               </div>
               <div className="space-y-1 p-3">
                 <p className="text-sm font-bold text-frost-white">

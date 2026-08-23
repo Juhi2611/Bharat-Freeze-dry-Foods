@@ -7,6 +7,9 @@ import { buildWhatsAppLink } from "@/lib/whatsapp";
 import type { Product } from "@/lib/products";
 import { InteractiveExperienceModal } from "./InteractiveExperienceModal";
 import { useCart } from "../context/CartContext";
+import { isVideoUrl } from "@/lib/utils";
+import { MediaBackground } from "./MediaBackground";
+import { toast } from "sonner";
 
 export function ProductCard({ product }: { product: Product }) {
   const [hover, setHover] = useState(false);
@@ -18,28 +21,19 @@ export function ProductCard({ product }: { product: Product }) {
   const active = hover;
   const hasRecipe = !!product.recipe;
   const hasInteractiveExp = !!product.interactiveExperience;
-  const hoverVideo = hasInteractiveExp ? product.interactiveExperience!.videoUrl : (hasRecipe ? product.recipe?.videoUrl : null);
+  const isIngredientVideo = isVideoUrl(product.ingredientImage);
+  const hoverVideo = hasInteractiveExp 
+    ? product.interactiveExperience!.videoUrl 
+    : (hasRecipe ? product.recipe?.videoUrl : (isIngredientVideo ? product.ingredientImage : null));
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.stopPropagation();
-    // Catalog UUID only — never SKU/name (those are display fields; checkout requires product.id).
-    if (!product.id) {
-      console.error('Cannot add to cart: product is missing catalog UUID', product);
-      return;
-    }
-    addToCart(
-      {
-        id: product.id,
-        sku: product.sku || '',
-        name: product.name,
-        price_inr: parseFloat(product.price.replace(/[^0-9.]/g, '')) || 250,
-        pack_image: product.packImage,
-        accent_color: product.accent,
-      },
-      qty
-    );
+    addToCart(product, qty);
     setAdded(true);
-    setTimeout(() => setAdded(false), 2000);
+    toast.success("Added to Cart", {
+      description: `${qty}x ${product.name} added to your enquiry cart.`,
+    });
+    setTimeout(() => setAdded(false), 1500);
   };
 
   return (
@@ -53,7 +47,7 @@ export function ProductCard({ product }: { product: Product }) {
       className="h-full"
     >
       <div
-        className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-white/8 bg-card transition-all duration-500 hover:border-sky-500/40"
+        className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-white/8 bg-card transition-all duration-500"
         onMouseEnter={() => setHover(true)}
         onMouseLeave={() => setHover(false)}
         onClick={() => {
@@ -71,44 +65,38 @@ export function ProductCard({ product }: { product: Product }) {
       >
         {/* Accent glow */}
         <div
-          className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+          className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100 z-10"
           style={{
             background: `radial-gradient(ellipse at 50% 0%, ${product.accent}20, transparent 60%)`,
           }}
         />
 
         {/* Image stack */}
-        <div className="relative aspect-[4/5] w-full overflow-hidden bg-deep-navy">
-          <img
-            src={product.packImage}
-            alt={product.name}
-            className={`absolute inset-0 h-full w-full object-cover transition-all duration-[600ms] ease-out ${
+        <div className="relative aspect-[4/5] w-full overflow-hidden">
+          <div
+            className={`absolute inset-0 transition-all duration-[600ms] ease-out ${
               active ? "scale-110 opacity-0" : "scale-100 opacity-100"
             }`}
-            loading="lazy"
-          />
-          {hoverVideo ? (
-            <video
-              src={hoverVideo}
-              autoPlay
-              muted
-              loop
-              playsInline
-              className={`absolute inset-0 h-full w-full object-cover transition-all duration-[600ms] ease-out ${
-                active ? "scale-105 opacity-100 translate-y-0" : "scale-110 opacity-0 translate-y-2"
-              }`}
-            />
-          ) : (
-            <img
-              src={product.ingredientImage}
-              alt=""
-              aria-hidden
-              className={`absolute inset-0 h-full w-full object-cover transition-all duration-[600ms] ease-out ${
-                active ? "scale-105 opacity-100 translate-y-0" : "scale-110 opacity-0 translate-y-2"
-              }`}
+          >
+            <MediaBackground
+              src={product.packImage}
+              alt={product.name}
               loading="lazy"
             />
-          )}
+          </div>
+          <div
+            className={`absolute inset-0 transition-all duration-[600ms] ease-out ${
+              active ? "scale-105 opacity-100 translate-y-0" : "scale-110 opacity-0 translate-y-2"
+            }`}
+          >
+            <MediaBackground
+              src={hoverVideo || product.ingredientImage}
+              alt={product.name}
+              isVideo={!!hoverVideo}
+              active={active}
+              loading="lazy"
+            />
+          </div>
 
           {/* Badges */}
           <div className="absolute left-3 top-3 flex flex-col gap-1.5 z-10">

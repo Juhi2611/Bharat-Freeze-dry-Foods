@@ -6,6 +6,7 @@ class MediaFile(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     file_name = models.CharField(max_length=255)
     file_url = models.URLField()
+    transparent_file_url = models.URLField(blank=True, default='')
     file_size_mb = models.DecimalField(max_digits=5, decimal_places=2, default=0.0)
     dimensions = models.CharField(max_length=50, blank=True)
     category = models.CharField(max_length=50, default='Products')  # Products, Superfoods, B2B Export

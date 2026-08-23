@@ -107,7 +107,7 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': env.db(
         'DATABASE_URL',
-        default='mysql://root:@127.0.0.1:3306/bff',
+        default='mysql://root:Gargi%402275@127.0.0.1:3306/bff',
     )
 }
 
@@ -180,6 +180,8 @@ CORS_ALLOWED_ORIGINS = env.list(
     default=[
         'http://localhost:8080',
         'http://127.0.0.1:8080',
+        'http://localhost:8081',   # add this
+    'http://127.0.0.1:8081',   
         'http://localhost:8082',
         'http://127.0.0.1:8082',
         'http://localhost:5173',

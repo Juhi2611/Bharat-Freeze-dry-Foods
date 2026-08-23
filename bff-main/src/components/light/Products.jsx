@@ -30,6 +30,8 @@ export const PRODUCTS = [
 ];
 
 /* ─── Product Card (Light Theme UI) ──────────────────────── */
+const isVideoUrl = (url) => typeof url === 'string' && (/\.(mp4|webm|ogv|mov)(\?.*)?$/i.test(url) || url.includes('/video/') || url.startsWith('data:video/'));
+
 function LightProductCard({ product }) {
   const [hovered, setHovered] = useState(false);
   const [qty, setQty] = useState(1);
@@ -37,6 +39,8 @@ function LightProductCard({ product }) {
   const waLink = `https://wa.me/919993377038?text=${encodeURIComponent(
     `Hi BFF, I would like to inquire about ${product.name} (Quantity: ${qty}).`
   )}`;
+
+  const isVideo = isVideoUrl(product.ingredientImage);
 
   return (
     <div
@@ -57,7 +61,7 @@ function LightProductCard({ product }) {
       }}
     >
       {/* Image Area with Flip / Reveal */}
-      <div style={{ position: 'relative', width: '100%', aspectRatio: '4/5', overflow: 'hidden', background: 'var(--light-grey)' }}>
+      <div style={{ position: 'relative', width: '100%', aspectRatio: '4/5', overflow: 'hidden', background: '#0F1A28' }}>
         <img
           src={product.packImage}
           alt={product.name}
@@ -68,16 +72,32 @@ function LightProductCard({ product }) {
             transform: hovered ? 'scale(1.08)' : 'scale(1)',
           }}
         />
-        <img
-          src={product.ingredientImage}
-          alt={product.name}
-          style={{
-            position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover',
-            transition: 'all 0.5s ease',
-            opacity: hovered ? 1 : 0,
-            transform: hovered ? 'scale(1)' : 'scale(1.08)',
-          }}
-        />
+        {isVideo ? (
+          <video
+            src={product.ingredientImage}
+            autoPlay
+            muted
+            loop
+            playsInline
+            style={{
+              position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover',
+              transition: 'all 0.5s ease',
+              opacity: hovered ? 1 : 0,
+              transform: hovered ? 'scale(1)' : 'scale(1.08)',
+            }}
+          />
+        ) : (
+          <img
+            src={product.ingredientImage}
+            alt={product.name}
+            style={{
+              position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover',
+              transition: 'all 0.5s ease',
+              opacity: hovered ? 1 : 0,
+              transform: hovered ? 'scale(1)' : 'scale(1.08)',
+            }}
+          />
+        )}
 
         {/* Badges */}
         <div style={{ position: 'absolute', top: 12, left: 12, display: 'flex', flexDirection: 'column', gap: '6px', zIndex: 5 }}>
