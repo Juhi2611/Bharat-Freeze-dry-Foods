@@ -14,6 +14,14 @@ class SiteSettingsSerializer(serializers.ModelSerializer):
         model = SiteSettings
         fields = '__all__'
 
+
+class PublicContactSerializer(serializers.ModelSerializer):
+    """Storefront-safe contact fields only — no admin/social payload."""
+
+    class Meta:
+        model = SiteSettings
+        fields = ('whatsapp_number', 'support_phone', 'support_email')
+
 class FAQSerializer(serializers.ModelSerializer):
     class Meta:
         model = FAQ

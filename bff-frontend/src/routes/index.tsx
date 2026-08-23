@@ -4,6 +4,7 @@ import { Categories } from "@/components/Categories";
 import { B2BStrip } from "@/components/B2BStrip";
 import { WhyBFFDark } from "@/components/WhyBFFDark";
 import { useTheme } from "@/lib/theme-context";
+import { useCatalogData } from "@/hooks/useCatalogData";
 
 // Light theme components
 import HeroLight from "@/components/light/Hero.jsx";
@@ -28,13 +29,14 @@ export const Route = createFileRoute("/")(  {
 
 function IndexPage() {
   const { theme } = useTheme();
+  const catalog = useCatalogData();
 
   if (theme === "light") {
     return (
       <main>
         <HeroLight />
         <HomeFeatureStripLight />
-        <CategoryShowcaseLight />
+        <CategoryShowcaseLight categories={catalog.categories} products={catalog.products} isLoading={catalog.isLoading} error={catalog.error} />
         <ExportBharatStripLight />
         <WhyBFFLight />
       </main>

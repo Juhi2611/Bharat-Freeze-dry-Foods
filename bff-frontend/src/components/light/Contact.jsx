@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { MapPin, Phone, Mail, Clock, CheckCircle2, Send, Loader2 } from 'lucide-react';
 import { useTheme } from '@/lib/theme-context';
+import { PHONE_DISPLAY, PHONE_TEL, buildWhatsAppLink } from '@/lib/whatsapp';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
@@ -128,8 +129,8 @@ export default function Contact({ hideHeader = false }) {
     {
       icon: <Phone size={20} />,
       label: 'Phone / WhatsApp',
-      value: '+91 99933 77038',
-      link: 'tel:+919993377038',
+      value: PHONE_DISPLAY,
+      link: `tel:${PHONE_TEL}`,
       color: '#2D7A3A',
     },
     {
@@ -238,7 +239,7 @@ export default function Contact({ hideHeader = false }) {
                   For urgent inquiries, WhatsApp us directly.
                 </p>
                 <a
-                  href="https://wa.me/919993377038"
+                  href={buildWhatsAppLink()}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="btn btn-whatsapp"
@@ -510,7 +511,7 @@ export default function Contact({ hideHeader = false }) {
 
             {/* WhatsApp CTA */}
             <a
-              href="https://wa.me/919993377038?text=Hi%20Bharat%20Freeze%20Fried%20Foods%2C%20I%27m%20interested%20in%20your%20products.%20Please%20contact%20me."
+              href={buildWhatsAppLink()}
               target="_blank"
               rel="noopener noreferrer"
               style={{

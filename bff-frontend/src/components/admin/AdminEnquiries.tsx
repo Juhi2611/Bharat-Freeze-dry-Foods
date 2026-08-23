@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import {
@@ -18,7 +18,8 @@ import {
   Send,
   Boxes,
 } from "lucide-react";
-import { DUMMY_ENQUIRIES, type EnquiryItem } from "./adminData";
+import { type EnquiryItem } from "./adminData";
+import { api } from "@/services/api";
 
 interface AdminEnquiriesProps {
   selectedEnquiryId: string | null;
@@ -26,10 +27,37 @@ interface AdminEnquiriesProps {
 }
 
 export function AdminEnquiries({ selectedEnquiryId, setSelectedEnquiryId }: AdminEnquiriesProps) {
-  const [enquiries, setEnquiries] = useState<EnquiryItem[]>(DUMMY_ENQUIRIES);
+  const [enquiries, setEnquiries] = useState<EnquiryItem[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [countryFilter, setCountryFilter] = useState("All");
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    void api.getEnquiries().then((records) => {
+      setEnquiries(records.map((enquiry) => ({
+        id: enquiry.id,
+        code: enquiry.enquiry_code,
+        company: enquiry.company_name,
+        country: enquiry.country,
+        contactPerson: enquiry.contact_person,
+        email: enquiry.email,
+        phone: enquiry.phone,
+        interestedProducts: enquiry.interested_products,
+        quantity: enquiry.quantity_requirement,
+        privateLabel: enquiry.private_label_required ? "Yes" : "No",
+        packagingPreference: enquiry.packaging_preference,
+        status: enquiry.status as EnquiryItem["status"],
+        date: enquiry.created_at,
+        message: enquiry.message,
+        notes: enquiry.internal_notes,
+      })));
+      setLoadError(null);
+    }).catch((error) => {
+      setEnquiries([]);
+      setLoadError(error instanceof Error ? error.message : "Unable to load enquiries.");
+    });
+  }, []);
 
   const activeDrawerEnquiry = enquiries.find((e) => e.id === selectedEnquiryId) || null;
 
@@ -44,19 +72,17 @@ export function AdminEnquiries({ selectedEnquiryId, setSelectedEnquiryId }: Admi
   });
 
   const updateStatus = (id: string, newStatus: EnquiryItem["status"]) => {
-    setEnquiries((prev) =>
-      prev.map((e) => (e.id === id ? { ...e, status: newStatus } : e))
-    );
-    toast.success(`Enquiry Status Updated`, {
-      description: `Status changed to ${newStatus}`,
-    });
+    void api.updateEnquiry(id, { status: newStatus }).then(() => {
+      setEnquiries((prev) => prev.map((e) => (e.id === id ? { ...e, status: newStatus } : e)));
+      toast.success(`Enquiry Status Updated`, { description: `Status changed to ${newStatus}` });
+    }).catch((error) => setLoadError(error instanceof Error ? error.message : "Unable to update enquiry."));
   };
 
   const updateNotes = (id: string, notes: string) => {
-    setEnquiries((prev) =>
-      prev.map((e) => (e.id === id ? { ...e, notes } : e))
-    );
-    toast.success("Notes Saved");
+    void api.updateEnquiry(id, { internal_notes: notes }).then(() => {
+      setEnquiries((prev) => prev.map((e) => (e.id === id ? { ...e, notes } : e)));
+      toast.success("Notes Saved");
+    }).catch((error) => setLoadError(error instanceof Error ? error.message : "Unable to save notes."));
   };
 
   return (
@@ -70,6 +96,8 @@ export function AdminEnquiries({ selectedEnquiryId, setSelectedEnquiryId }: Admi
           </p>
         </div>
       </div>
+
+      {loadError && <div role="alert" className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-300">{loadError}</div>}
 
       {/* FILTERS BAR */}
       <div className="flex flex-col sm:flex-row gap-3 rounded-2xl border border-white/10 bg-card/60 p-4 backdrop-blur-xl">
@@ -215,7 +243,7 @@ export function AdminEnquiries({ selectedEnquiryId, setSelectedEnquiryId }: Admi
                         {activeDrawerEnquiry.company}
                       </h3>
                       <p className="text-xs text-steel-silver">
-                        ID: {activeDrawerEnquiry.id} · Submitted {activeDrawerEnquiry.date}
+                        ID: {activeDrawerEnquiry.code} · Submitted {activeDrawerEnquiry.date}
                       </p>
                     </div>
                   </div>

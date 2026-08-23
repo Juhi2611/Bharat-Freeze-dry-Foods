@@ -1,7 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
-    WebsiteSectionViewSet, SiteSettingsView, FAQViewSet, RegionComplianceProfileViewSet,
+    WebsiteSectionViewSet, SiteSettingsView, PublicContactView, FAQViewSet, RegionComplianceProfileViewSet,
     CertificationViewSet, CompanyTimelineEntryViewSet, FounderMessageView, QualityAssuranceStepViewSet
 )
 
@@ -14,6 +14,7 @@ router.register('timeline', CompanyTimelineEntryViewSet, basename='company-timel
 router.register('qa-steps', QualityAssuranceStepViewSet, basename='qa-step')
 
 urlpatterns = [
+    path('public-contact/', PublicContactView.as_view(), name='public-contact'),
     path('settings', SiteSettingsView.as_view(), name='site-settings'),
     path('founder-message', FounderMessageView.as_view(), name='founder-message'),
     path('', include(router.urls)),

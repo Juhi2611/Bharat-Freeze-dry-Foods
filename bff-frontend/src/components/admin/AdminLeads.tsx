@@ -1,22 +1,15 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import {
-  Globe2,
   DollarSign,
   Briefcase,
   TrendingUp,
   Plus,
-  ArrowRight,
-  UserCheck,
-  Calendar,
   Layers,
-  FileCheck2,
-  CheckCircle2,
   X,
-  Sparkles,
-  Building2,
-  ChevronRight,
+  Columns3,
+  List,
 } from "lucide-react";
 import type { AdminTab } from "./AdminSidebar";
 
@@ -36,151 +29,79 @@ export interface ExportLeadDeal {
   targetClosing: string;
 }
 
-const INITIAL_DEALS: ExportLeadDeal[] = [
-  {
-    id: "lead-101",
-    company: "Apex Global Foods Inc.",
-    country: "USA",
-    flag: "🇺🇸",
-    dealTitle: "20 Tons Alphonso Mango Chunks (40HQ)",
-    volume: "20 Metric Tons",
-    dealValue: "$185,000",
-    dealValueNum: 185000,
-    stage: "Proforma Issued",
-    probability: 90,
-    contactName: "David Miller",
-    email: "dmiller@apexglobal.com",
-    targetClosing: "2026-08-05",
-  },
-  {
-    id: "lead-102",
-    company: "EuroGourmet Hotel Supplies",
-    country: "Germany",
-    flag: "🇩🇪",
-    dealTitle: "Annual Instant Gravy Powder Contract",
-    volume: "12 Metric Tons",
-    dealValue: "$95,000",
-    dealValueNum: 95000,
-    stage: "Negotiation",
-    probability: 75,
-    contactName: "Markus Webber",
-    email: "m.webber@eurogourmet.de",
-    targetClosing: "2026-08-12",
-  },
-  {
-    id: "lead-103",
-    company: "Tokyo Organic Trading Co.",
-    country: "Japan",
-    flag: "🇯🇵",
-    dealTitle: "White-Label OEM Organic Moringa Powder",
-    volume: "8 Metric Tons",
-    dealValue: "$140,000",
-    dealValueNum: 140000,
-    stage: "Sample Sent",
-    probability: 60,
-    contactName: "Kenji Sato",
-    email: "kenji@tokyo-organic.jp",
-    targetClosing: "2026-08-20",
-  },
-  {
-    id: "lead-104",
-    company: "Gulf Food & Beverage Distributors",
-    country: "UAE",
-    flag: "🇦🇪",
-    dealTitle: "2x 40HQ Freeze-Dried Sweet Corn & Peas",
-    volume: "35 Metric Tons",
-    dealValue: "$260,000",
-    dealValueNum: 260000,
-    stage: "Closed Won",
-    probability: 100,
-    contactName: "Tariq Al-Mansoor",
-    email: "tariq@gulffood.ae",
-    targetClosing: "2026-07-28",
-  },
-  {
-    id: "lead-105",
-    company: "Nordic Health Markets",
-    country: "Sweden",
-    flag: "🇸🇪",
-    dealTitle: "Freeze-Dried Strawberry Powder Bulk",
-    volume: "5 Metric Tons",
-    dealValue: "$72,000",
-    dealValueNum: 72000,
-    stage: "Qualified",
-    probability: 40,
-    contactName: "Astrid Lindgren",
-    email: "astrid@nordichealth.se",
-    targetClosing: "2026-08-25",
-  },
-  {
-    id: "lead-106",
-    company: "Sydney Gourmet Imports",
-    country: "Australia",
-    flag: "🇦🇺",
-    dealTitle: "Ready-To-Eat Freeze Dried Biryani Packets",
-    volume: "15,000 Pouches",
-    dealValue: "$58,000",
-    dealValueNum: 58000,
-    stage: "Negotiation",
-    probability: 70,
-    contactName: "Liam O'Connor",
-    email: "liam@sydneygourmet.au",
-    targetClosing: "2026-08-15",
-  },
+const PIPELINE_STAGES: Array<{ id: ExportLeadDeal["stage"]; title: string; color: string }> = [
+  { id: "Qualified", title: "Inbound Qualified", color: "text-blue-400" },
+  { id: "Sample Sent", title: "Sample Evaluation", color: "text-purple-400" },
+  { id: "Negotiation", title: "Contract Negotiation", color: "text-amber-400" },
+  { id: "Proforma Issued", title: "Proforma Issued", color: "text-ice-blue" },
+  { id: "Closed Won", title: "Deal Closed / Won", color: "text-emerald-400" },
 ];
 
-const PIPELINE_STAGES: Array<{ id: ExportLeadDeal["stage"]; title: string; color: string }> = [
-  { id: "Qualified", title: "Inbound Qualified", color: "border-blue-500/30 text-blue-400" },
-  { id: "Sample Sent", title: "Sample Evaluation", color: "border-purple-500/30 text-purple-400" },
-  { id: "Negotiation", title: "Contract Negotiation", color: "border-amber-500/30 text-amber-400" },
-  { id: "Proforma Issued", title: "Proforma Issued", color: "border-ice-blue/40 text-ice-blue" },
-  { id: "Closed Won", title: "Deal Closed / Won", color: "border-forest-green/40 text-emerald-400" },
-];
+function formatUsdCompact(amount: number): string {
+  if (amount <= 0) return "$0";
+  if (amount >= 1_000_000) return `$${(amount / 1_000_000).toFixed(1)}M`;
+  if (amount >= 1_000) return `$${Math.round(amount / 1_000)}k`;
+  return `$${amount.toLocaleString("en-US")}`;
+}
+
+function parseDealValue(raw: string): number {
+  const digits = raw.replace(/[^0-9]/g, "");
+  const parsed = parseInt(digits, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+}
 
 interface AdminLeadsProps {
   setActiveTab: (tab: AdminTab) => void;
 }
 
 export function AdminLeads({ setActiveTab }: AdminLeadsProps) {
-  const [deals, setDeals] = useState<ExportLeadDeal[]>(INITIAL_DEALS);
+  const [deals, setDeals] = useState<ExportLeadDeal[]>([]);
+  const [viewMode, setViewMode] = useState<"pipeline" | "list">("pipeline");
   const [selectedDeal, setSelectedDeal] = useState<ExportLeadDeal | null>(null);
   const [showAddDeal, setShowAddDeal] = useState(false);
   const [newCompany, setNewCompany] = useState("");
   const [newTitle, setNewTitle] = useState("");
   const [newValue, setNewValue] = useState("");
 
-  const totalPipelineValue = deals.reduce((sum, d) => sum + d.dealValueNum, 0);
+  const stats = useMemo(() => {
+    const totalPipelineValue = deals.reduce((sum, d) => sum + d.dealValueNum, 0);
+    const closedWon = deals.filter((d) => d.stage === "Closed Won").length;
+    const activeDeals = deals.filter((d) => d.stage !== "Closed Won").length;
+    const winRate =
+      deals.length > 0 ? Math.round((closedWon / deals.length) * 1000) / 10 : null;
+    const avgDealValue = deals.length > 0 ? totalPipelineValue / deals.length : null;
+
+    return { totalPipelineValue, activeDeals, winRate, avgDealValue };
+  }, [deals]);
 
   const moveStage = (dealId: string, nextStage: ExportLeadDeal["stage"]) => {
-    setDeals((prev) =>
-      prev.map((d) => (d.id === dealId ? { ...d, stage: nextStage } : d))
-    );
-    toast.success(`Deal Stage Updated to ${nextStage}`);
+    setDeals((prev) => prev.map((d) => (d.id === dealId ? { ...d, stage: nextStage } : d)));
+    toast.success(`Deal stage updated to ${nextStage}`);
   };
 
   const handleAddDeal = () => {
     if (!newCompany.trim() || !newTitle.trim()) {
-      toast.error("Company & Deal title required");
+      toast.error("Company and deal title are required");
       return;
     }
-    const valNum = parseInt(newValue.replace(/[^0-9]/g, "")) || 50000;
+    const valNum = parseDealValue(newValue) || 50_000;
     const newDeal: ExportLeadDeal = {
       id: `lead-${Date.now()}`,
-      company: newCompany,
-      country: "USA",
-      flag: "🇺🇸",
-      dealTitle: newTitle,
-      volume: "10 Tons",
-      dealValue: `$${valNum.toLocaleString()}`,
+      company: newCompany.trim(),
+      country: "—",
+      flag: "🌍",
+      dealTitle: newTitle.trim(),
+      volume: "TBD",
+      dealValue: `$${valNum.toLocaleString("en-US")}`,
       dealValueNum: valNum,
       stage: "Qualified",
       probability: 30,
-      contactName: "Trade Representative",
-      email: "inquiry@client.com",
-      targetClosing: "2026-08-30",
+      contactName: "—",
+      email: "—",
+      targetClosing: "—",
     };
     setDeals((prev) => [newDeal, ...prev]);
-    toast.success("New Export Deal Created in Pipeline!");
+    toast.success("Export deal added to pipeline");
     setShowAddDeal(false);
     setNewCompany("");
     setNewTitle("");
@@ -188,308 +109,300 @@ export function AdminLeads({ setActiveTab }: AdminLeadsProps) {
   };
 
   return (
-    <div className="w-full space-y-6 pb-12">
-      {/* HEADER */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-white/10 pb-6">
-        <div>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-ice-blue/10 px-3 py-1 text-xs font-bold uppercase tracking-widest text-ice-blue">
-            <Globe2 className="h-3.5 w-3.5" /> B2B Deals & Contract Pipeline
-          </span>
-          <h2 className="mt-2 text-2xl font-bold text-frost-white">Export Sales Pipeline</h2>
-          <p className="text-xs text-steel-silver">
-            Track high-volume container deals, OEM white-label agreements & international contract stages
-          </p>
-        </div>
-
-        <button
-          onClick={() => setShowAddDeal(true)}
-          className="flex items-center gap-2 rounded-full bg-gradient-primary-cta px-6 py-2.5 text-xs font-bold uppercase tracking-widest text-white shadow-frost hover:scale-[1.02] transition-transform"
-        >
-          <Plus className="h-4 w-4" /> Add Export Deal
-        </button>
-      </div>
-
-      {/* DIFFERENTIATOR EXPLANATION BANNER */}
-      <div className="rounded-2xl border border-ice-blue/30 bg-gradient-to-r from-ice-blue/10 via-card/60 to-deep-navy p-5 backdrop-blur-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="space-y-1">
-          <h4 className="text-sm font-bold text-frost-white flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-ice-blue" /> B2B Enquiries vs. Export Leads Pipeline
-          </h4>
-          <p className="text-xs text-steel-silver max-w-2xl">
-            <strong>B2B Enquiries</strong> are incoming raw website messages. <strong>Export Leads</strong> are qualified high-value deals ($50k–$500k+) actively moving through contract, proforma, and container loading stages.
-          </p>
-        </div>
-        <button
-          onClick={() => setActiveTab("enquiries")}
-          className="flex items-center gap-1.5 rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-xs font-bold text-ice-blue hover:bg-white/10 shrink-0"
-        >
-          View Raw Enquiries <ArrowRight className="h-3.5 w-3.5" />
-        </button>
-      </div>
-
-      {/* METRIC STATS */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-2xl border border-white/10 bg-card/60 p-5 backdrop-blur-xl flex items-center gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-ice-blue/15 text-ice-blue">
-            <DollarSign className="h-6 w-6" />
-          </div>
-          <div>
-            <p className="text-xs text-steel-silver uppercase font-semibold">Active Pipeline Value</p>
-
-            <p className="text-2xl font-bold text-frost-white">${(totalPipelineValue / 1000).toFixed(0)}k USD</p>
-
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-white/10 bg-card/60 p-5 backdrop-blur-xl flex items-center gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-400">
-            <Briefcase className="h-6 w-6" />
-          </div>
-          <div>
-            <p className="text-xs text-steel-silver uppercase font-semibold">Active Export Deals</p>
-            <p className="text-2xl font-bold text-frost-white">{deals.length} Contracts</p>
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-white/10 bg-card/60 p-5 backdrop-blur-xl flex items-center gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-500/15 text-purple-400">
-            <TrendingUp className="h-6 w-6" />
-          </div>
-          <div>
-            <p className="text-xs text-steel-silver uppercase font-semibold">Pipeline Win Rate</p>
-            <p className="text-2xl font-bold text-frost-white">72.4%</p>
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-white/10 bg-card/60 p-5 backdrop-blur-xl flex items-center gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/15 text-amber-400">
-            <Layers className="h-6 w-6" />
-          </div>
-          <div>
-            <p className="text-xs text-steel-silver uppercase font-semibold">Avg. Container Deal</p>
-            <p className="text-2xl font-bold text-frost-white">
-              ${Math.round(totalPipelineValue / deals.length / 1000)}k USD
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* PIPELINE KANBAN STAGES */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
-        {PIPELINE_STAGES.map((stage) => {
-          const stageDeals = deals.filter((d) => d.stage === stage.id);
-          const stageValue = stageDeals.reduce((sum, d) => sum + d.dealValueNum, 0);
-
-          return (
-            <div
-              key={stage.id}
-              className="flex flex-col rounded-2xl border border-white/10 bg-card/40 p-4 backdrop-blur-xl min-h-[500px]"
+    <div className="flex w-full max-w-[1600px] flex-col gap-3 pb-4">
+      {/* Header */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <h2 className="text-lg font-bold text-frost-white">Export Sales Pipeline</h2>
+          <p className="text-[0.7rem] text-steel-silver">
+            Enquiries = raw messages · Leads = qualified deals ·{" "}
+            <button
+              type="button"
+              onClick={() => setActiveTab("enquiries")}
+              className="font-semibold text-ice-blue hover:underline"
             >
-              {/* Column Header */}
-              <div className="mb-4 pb-3 border-b border-white/10 flex items-center justify-between">
-                <div>
-                  <h4 className={`text-xs font-bold uppercase tracking-wider ${stage.color}`}>
-                    {stage.title}
-                  </h4>
-                  <p className="text-[0.65rem] text-steel-silver mt-0.5 font-mono">
-                    ${(stageValue / 1000).toFixed(0)}k · {stageDeals.length} deals
-                  </p>
-                </div>
-                <span className="rounded-full bg-white/10 px-2 py-0.5 text-[0.65rem] font-bold text-frost-white">
-                  {stageDeals.length}
-                </span>
-              </div>
+              View Enquiries →
+            </button>
+          </p>
+        </div>
 
-              {/* Deal Cards Container */}
-              <div className="flex-1 space-y-3 overflow-y-auto pr-1">
-                {stageDeals.map((deal) => (
-                  <motion.div
-                    key={deal.id}
-                    whileHover={{ scale: 1.02 }}
-                    onClick={() => setSelectedDeal(deal)}
-                    className="group relative cursor-pointer rounded-xl border border-white/10 bg-card/80 p-3.5 backdrop-blur-xl transition-all hover:border-ice-blue/40 hover:shadow-lg"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm">{deal.flag}</span>
-                      <span className="rounded-md bg-white/5 border border-white/10 px-2 py-0.5 text-[0.65rem] font-mono font-bold text-ice-blue">
-                        {deal.dealValue}
-                      </span>
-                    </div>
-
-                    <h5 className="mt-2 text-xs font-bold text-frost-white group-hover:text-ice-blue transition-colors line-clamp-1">
-                      {deal.company}
-                    </h5>
-                    <p className="mt-1 text-[0.65rem] text-steel-silver line-clamp-2">
-                      {deal.dealTitle}
-                    </p>
-
-                    <div className="mt-3 flex items-center justify-between border-t border-white/10 pt-2 text-[0.6rem] text-steel-silver">
-                      <span>{deal.volume}</span>
-                      <span className="font-semibold text-emerald-400">{deal.probability}% Prob.</span>
-                    </div>
-                  </motion.div>
-                ))}
-
-                {stageDeals.length === 0 && (
-                  <div className="flex h-32 items-center justify-center rounded-xl border border-dashed border-white/10 text-[0.7rem] text-steel-silver">
-                    No deals in stage
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex rounded-lg border border-white/10 bg-white/5 p-0.5">
+            <button
+              type="button"
+              onClick={() => setViewMode("pipeline")}
+              className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-[0.65rem] font-bold uppercase tracking-wider transition ${
+                viewMode === "pipeline"
+                  ? "bg-ice-blue/20 text-ice-blue"
+                  : "text-steel-silver hover:text-frost-white"
+              }`}
+            >
+              <Columns3 className="h-3.5 w-3.5" /> Pipeline
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("list")}
+              className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-[0.65rem] font-bold uppercase tracking-wider transition ${
+                viewMode === "list"
+                  ? "bg-ice-blue/20 text-ice-blue"
+                  : "text-steel-silver hover:text-frost-white"
+              }`}
+            >
+              <List className="h-3.5 w-3.5" /> List
+            </button>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowAddDeal(true)}
+            className="inline-flex items-center gap-1.5 rounded-full bg-gradient-primary-cta px-4 py-1.5 text-[0.7rem] font-bold uppercase tracking-widest text-white"
+          >
+            <Plus className="h-3.5 w-3.5" /> Add Deal
+          </button>
+        </div>
       </div>
 
-      {/* DEAL DETAIL MODAL */}
+      {/* Dense metrics strip */}
+      <div className="grid grid-cols-2 overflow-hidden rounded-lg border border-white/10 bg-card/50 sm:grid-cols-4 sm:divide-x sm:divide-white/10">
+        {[
+          { label: "Pipeline Value", value: formatUsdCompact(stats.totalPipelineValue), Icon: DollarSign, tone: "text-ice-blue" },
+          { label: "Active Deals", value: String(stats.activeDeals), Icon: Briefcase, tone: "text-emerald-400" },
+          { label: "Win Rate", value: stats.winRate !== null ? `${stats.winRate}%` : "—", Icon: TrendingUp, tone: "text-purple-400" },
+          { label: "Avg. Deal", value: stats.avgDealValue !== null ? formatUsdCompact(stats.avgDealValue) : "—", Icon: Layers, tone: "text-amber-400" },
+        ].map(({ label, value, Icon, tone }) => (
+          <div key={label} className="flex items-center gap-2 border-b border-white/10 px-3 py-2 last:border-b-0 sm:border-b-0">
+            <Icon className={`h-3.5 w-3.5 shrink-0 ${tone}`} />
+            <div className="min-w-0 leading-tight">
+              <p className="text-[0.55rem] font-semibold uppercase tracking-wider text-steel-silver">{label}</p>
+              <p className="truncate text-sm font-bold text-frost-white">{value}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Pipeline — no forced tall columns */}
+      {viewMode === "pipeline" && (
+        <div className="overflow-x-auto">
+          <div className="flex gap-2 lg:grid lg:grid-cols-5">
+            {PIPELINE_STAGES.map((stage) => {
+              const stageDeals = deals.filter((d) => d.stage === stage.id);
+              const stageValue = stageDeals.reduce((sum, d) => sum + d.dealValueNum, 0);
+
+              return (
+                <div
+                  key={stage.id}
+                  className="flex w-[180px] shrink-0 flex-col rounded-lg border border-white/10 bg-card/40 p-2 lg:w-auto"
+                >
+                  <div className="mb-1.5 flex items-start justify-between gap-1 border-b border-white/10 pb-1.5">
+                    <div className="min-w-0">
+                      <h4 className={`text-[0.6rem] font-bold uppercase leading-snug ${stage.color}`}>
+                        {stage.title}
+                      </h4>
+                      <p className="font-mono text-[0.55rem] text-steel-silver">
+                        {formatUsdCompact(stageValue)} · {stageDeals.length}
+                      </p>
+                    </div>
+                    <span className="rounded bg-white/10 px-1 text-[0.55rem] font-bold text-frost-white">
+                      {stageDeals.length}
+                    </span>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    {stageDeals.map((deal) => (
+                      <button
+                        key={deal.id}
+                        type="button"
+                        onClick={() => setSelectedDeal(deal)}
+                        className="w-full rounded-md border border-white/10 bg-card/80 p-2 text-left hover:border-ice-blue/40"
+                      >
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="text-[0.65rem]">{deal.flag}</span>
+                          <span className="font-mono text-[0.55rem] font-bold text-ice-blue">{deal.dealValue}</span>
+                        </div>
+                        <p className="mt-0.5 line-clamp-1 text-[0.65rem] font-bold text-frost-white">{deal.company}</p>
+                        <p className="line-clamp-1 text-[0.55rem] text-steel-silver">{deal.dealTitle}</p>
+                      </button>
+                    ))}
+                    {stageDeals.length === 0 && (
+                      <p className="py-0.5 text-center text-[0.6rem] text-steel-silver/60">No deals</p>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* List */}
+      {viewMode === "list" && (
+        <div className="overflow-hidden rounded-lg border border-white/10 bg-card/40">
+          {deals.length === 0 ? (
+            <p className="px-3 py-3 text-center text-[0.7rem] text-steel-silver">
+              No deals yet — use <strong className="text-frost-white">Add Deal</strong> above.
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[640px] text-left text-xs">
+                <thead>
+                  <tr className="border-b border-white/10 bg-white/5 text-[0.6rem] uppercase tracking-wider text-steel-silver">
+                    <th className="px-3 py-2 font-semibold">Company</th>
+                    <th className="px-3 py-2 font-semibold">Deal</th>
+                    <th className="px-3 py-2 font-semibold">Stage</th>
+                    <th className="px-3 py-2 font-semibold">Value</th>
+                    <th className="px-3 py-2 font-semibold">Prob.</th>
+                    <th className="px-3 py-2" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {deals.map((deal) => (
+                    <tr key={deal.id} className="border-b border-white/5 hover:bg-white/5">
+                      <td className="px-3 py-2 font-semibold text-frost-white">
+                        {deal.flag} {deal.company}
+                      </td>
+                      <td className="max-w-[180px] truncate px-3 py-2 text-steel-silver">{deal.dealTitle}</td>
+                      <td className="px-3 py-2 text-frost-white">{deal.stage}</td>
+                      <td className="px-3 py-2 font-mono font-bold text-ice-blue">{deal.dealValue}</td>
+                      <td className="px-3 py-2 text-emerald-400">{deal.probability}%</td>
+                      <td className="px-3 py-2 text-right">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedDeal(deal)}
+                          className="rounded border border-white/10 px-2 py-0.5 text-[0.6rem] font-bold text-ice-blue"
+                        >
+                          Open
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {viewMode === "pipeline" && deals.length === 0 && (
+        <p className="text-[0.65rem] text-steel-silver">
+          Empty pipeline — click <strong className="text-frost-white">Add Deal</strong> to create the first lead.
+        </p>
+      )}
+
+      {/* Detail modal */}
       <AnimatePresence>
         {selectedDeal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md"
+            onClick={() => setSelectedDeal(null)}
+          >
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="relative w-full max-w-lg rounded-2xl border border-white/15 bg-deep-navy p-6 shadow-2xl space-y-4"
+              onClick={(e) => e.stopPropagation()}
+              className="relative flex max-h-[min(90vh,560px)] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-white/15 bg-deep-navy shadow-2xl"
             >
-              <div className="flex items-center justify-between border-b border-white/10 pb-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl">{selectedDeal.flag}</span>
-                  <div>
-                    <h3 className="text-base font-bold text-frost-white">{selectedDeal.company}</h3>
-                    <p className="text-xs text-steel-silver">{selectedDeal.country} · Deal ID: {selectedDeal.id}</p>
-                  </div>
+              <div className="flex items-center justify-between border-b border-white/10 px-5 py-3">
+                <div>
+                  <h3 className="font-bold text-frost-white">
+                    {selectedDeal.flag} {selectedDeal.company}
+                  </h3>
+                  <p className="text-xs text-steel-silver">{selectedDeal.dealTitle}</p>
                 </div>
-                <button onClick={() => setSelectedDeal(null)} className="text-steel-silver hover:text-white">
+                <button type="button" onClick={() => setSelectedDeal(null)} className="text-steel-silver hover:text-white">
                   <X className="h-5 w-5" />
                 </button>
               </div>
-
-              <div className="space-y-3 text-xs">
-                <div className="rounded-xl border border-white/10 bg-white/5 p-3 space-y-2">
-                  <p className="font-bold text-frost-white text-sm">{selectedDeal.dealTitle}</p>
-                  <div className="grid grid-cols-2 gap-2 text-steel-silver">
-                    <p>Contract Value: <strong className="text-ice-blue">{selectedDeal.dealValue}</strong></p>
-                    <p>Volume: <strong className="text-frost-white">{selectedDeal.volume}</strong></p>
-                    <p>Contact: <strong className="text-frost-white">{selectedDeal.contactName}</strong></p>
-                    <p>Target Close: <strong className="text-frost-white">{selectedDeal.targetClosing}</strong></p>
-                  </div>
+              <div className="space-y-3 overflow-y-auto px-5 py-4 text-xs">
+                <div className="grid grid-cols-2 gap-2 text-steel-silver">
+                  <p>
+                    Value: <strong className="text-ice-blue">{selectedDeal.dealValue}</strong>
+                  </p>
+                  <p>
+                    Prob: <strong className="text-emerald-400">{selectedDeal.probability}%</strong>
+                  </p>
                 </div>
-
-                <div>
-                  <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-steel-silver">
-                    Move Deal Stage
-                  </label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {PIPELINE_STAGES.map((s) => (
-                      <button
-                        key={s.id}
-                        onClick={() => {
-                          moveStage(selectedDeal.id, s.id);
-                          setSelectedDeal({ ...selectedDeal, stage: s.id });
-                        }}
-                        className={`rounded-xl border p-2 text-left text-[0.7rem] font-semibold transition-all ${
-                          selectedDeal.stage === s.id
-                            ? "border-ice-blue bg-ice-blue/20 text-ice-blue"
-                            : "border-white/10 bg-white/5 text-steel-silver hover:bg-white/10"
-                        }`}
-                      >
-                        {s.title}
-                      </button>
-                    ))}
-                  </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {PIPELINE_STAGES.map((s) => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => {
+                        moveStage(selectedDeal.id, s.id);
+                        setSelectedDeal({ ...selectedDeal, stage: s.id });
+                      }}
+                      className={`rounded-lg border p-2 text-left text-[0.7rem] font-semibold ${
+                        selectedDeal.stage === s.id
+                          ? "border-ice-blue bg-ice-blue/20 text-ice-blue"
+                          : "border-white/10 bg-white/5 text-steel-silver"
+                      }`}
+                    >
+                      {s.title}
+                    </button>
+                  ))}
                 </div>
-              </div>
-
-              <div className="flex justify-end gap-3 border-t border-white/10 pt-4">
-                <button
-                  onClick={() => setSelectedDeal(null)}
-                  className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold text-frost-white"
-                >
-                  Close
-                </button>
-                <button
-                  onClick={() => {
-                    toast.success("Proforma invoice generated for deal!");
-                    setSelectedDeal(null);
-                  }}
-                  className="rounded-xl bg-gradient-primary-cta px-5 py-2 text-xs font-bold uppercase tracking-widest text-white shadow-frost"
-                >
-                  Issue Proforma Invoice
-                </button>
               </div>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
 
-      {/* ADD NEW DEAL MODAL */}
+      {/* Add modal */}
       <AnimatePresence>
         {showAddDeal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md"
+            onClick={() => setShowAddDeal(false)}
+          >
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="relative w-full max-w-md rounded-2xl border border-white/15 bg-deep-navy p-6 shadow-2xl space-y-4"
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-md overflow-hidden rounded-2xl border border-white/15 bg-deep-navy shadow-2xl"
             >
-              <div className="flex items-center justify-between border-b border-white/10 pb-3">
-                <h3 className="text-base font-bold text-frost-white">Add Export Pipeline Deal</h3>
-                <button onClick={() => setShowAddDeal(false)} className="text-steel-silver hover:text-white">
+              <div className="flex items-center justify-between border-b border-white/10 px-5 py-3">
+                <h3 className="font-bold text-frost-white">Add Export Deal</h3>
+                <button type="button" onClick={() => setShowAddDeal(false)} className="text-steel-silver hover:text-white">
                   <X className="h-5 w-5" />
                 </button>
               </div>
-
-              <div>
-                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-steel-silver">
-                  Buyer Company Name *
-                </label>
+              <div className="space-y-3 px-5 py-4">
                 <input
                   type="text"
                   value={newCompany}
                   onChange={(e) => setNewCompany(e.target.value)}
-                  placeholder="e.g. Apex Global Trading Ltd"
-                  className="w-full rounded-xl border border-white/10 bg-white/5 py-2.5 px-4 text-xs text-frost-white focus:border-ice-blue focus:outline-none"
+                  placeholder="Buyer company *"
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-frost-white focus:border-ice-blue focus:outline-none"
                 />
-              </div>
-
-              <div>
-                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-steel-silver">
-                  Deal Title / Products
-                </label>
                 <input
                   type="text"
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
-                  placeholder="e.g. 20 Tons Freeze Dried Mango Chunks"
-                  className="w-full rounded-xl border border-white/10 bg-white/5 py-2.5 px-4 text-xs text-frost-white focus:border-ice-blue focus:outline-none"
+                  placeholder="Deal title / products *"
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-frost-white focus:border-ice-blue focus:outline-none"
                 />
-              </div>
-
-              <div>
-                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-steel-silver">
-                  Estimated Value ($ USD)
-                </label>
                 <input
                   type="text"
                   value={newValue}
                   onChange={(e) => setNewValue(e.target.value)}
-                  placeholder="e.g. $150,000"
-                  className="w-full rounded-xl border border-white/10 bg-white/5 py-2.5 px-4 text-xs text-frost-white focus:border-ice-blue focus:outline-none"
+                  placeholder="Estimated value USD"
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-frost-white focus:border-ice-blue focus:outline-none"
                 />
               </div>
-
-              <div className="flex justify-end gap-3 border-t border-white/10 pt-4">
+              <div className="flex justify-end gap-2 border-t border-white/10 px-5 py-3">
                 <button
+                  type="button"
                   onClick={() => setShowAddDeal(false)}
-                  className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold text-frost-white"
+                  className="rounded-xl border border-white/10 px-4 py-2 text-xs text-frost-white"
                 >
                   Cancel
                 </button>
                 <button
+                  type="button"
                   onClick={handleAddDeal}
-                  className="rounded-xl bg-gradient-primary-cta px-5 py-2 text-xs font-bold uppercase tracking-widest text-white shadow-frost"
+                  className="rounded-xl bg-gradient-primary-cta px-4 py-2 text-xs font-bold uppercase tracking-widest text-white"
                 >
-                  Save Deal
+                  Save
                 </button>
               </div>
             </motion.div>

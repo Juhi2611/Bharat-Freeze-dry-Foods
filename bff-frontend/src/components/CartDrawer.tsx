@@ -1,6 +1,6 @@
 import React from 'react';
 import { useCart } from '../context/CartContext';
-import { X, Trash2, Plus, Minus, ShoppingBag, ArrowRight, ShieldCheck } from 'lucide-react';
+import { X, Trash2, Plus, Minus, ShoppingBag, CreditCard, FileText, ShieldCheck } from 'lucide-react';
 
 export const CartDrawer: React.FC = () => {
   const {
@@ -11,21 +11,21 @@ export const CartDrawer: React.FC = () => {
     updateQuantity,
     totalItems,
     totalPrice,
-    setIsCheckoutOpen,
+    openCheckout,
   } = useCart();
 
   if (!isCartOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[90] overflow-hidden">
+    <div className="cart-drawer-overlay fixed inset-0 z-[10000] overflow-hidden">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity"
         onClick={() => setIsCartOpen(false)}
       />
 
-      <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
-        <div className="w-screen max-w-md bg-[#0F172A] border-l border-sky-500/20 shadow-2xl text-slate-100 flex flex-col justify-between">
+      <div className="fixed inset-y-0 right-0 flex w-full max-w-full sm:w-auto sm:pl-10">
+        <div className="cart-drawer-panel flex h-full w-full flex-col justify-between border-l border-sky-500/20 bg-[#0F172A] text-slate-100 shadow-2xl sm:w-screen sm:max-w-md">
           {/* Header */}
           <div className="p-6 border-b border-slate-800 flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -34,7 +34,7 @@ export const CartDrawer: React.FC = () => {
               </div>
               <div>
                 <h3 className="font-bold text-lg text-white">Selected Sample / Cart Items</h3>
-                <p className="text-xs text-slate-400">{totalItems} {totalItems === 1 ? 'item' : 'items'} ready for quote</p>
+                <p className="text-xs text-slate-400">{totalItems} {totalItems === 1 ? 'item' : 'items'} in cart</p>
               </div>
             </div>
             <button
@@ -111,31 +111,42 @@ export const CartDrawer: React.FC = () => {
           {items.length > 0 && (
             <div className="p-6 border-t border-slate-800 bg-slate-950/80 space-y-4">
               <div className="space-y-1.5 text-xs text-slate-400">
-                <div className="flex justify-between">
-                  <span>Estimated Total (INR)</span>
-                  <span className="font-bold text-slate-200">₹{totalPrice.toLocaleString('en-IN')}</span>
+                <div className="flex justify-between text-sm">
+                  <span>Total (INR)</span>
+                  <span className="font-bold text-slate-100">₹{totalPrice.toLocaleString('en-IN')}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span>Estimated Total (USD)</span>
-                  <span className="font-bold text-sky-400 font-mono">${(totalPrice / 85).toFixed(2)} USD</span>
-                </div>
-                <p className="text-[10px] text-slate-500 italic mt-1">
-                  * Final pricing depends on export FOB/CIF incoterm & order volume.
+              </div>
+
+              <div className="space-y-2">
+                <button
+                  onClick={() => {
+                    setIsCartOpen(false);
+                    openCheckout('pay');
+                  }}
+                  className="w-full py-3.5 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white font-semibold rounded-xl text-sm shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2 transition transform active:scale-[0.99]"
+                >
+                  <CreditCard className="w-4 h-4" /> Pay Now
+                </button>
+                <p className="text-[10px] text-slate-500 text-center">
+                  Instant order — secure payment via Razorpay
+                </p>
+
+                <button
+                  onClick={() => {
+                    setIsCartOpen(false);
+                    openCheckout('quote');
+                  }}
+                  className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-100 font-medium rounded-xl text-sm border border-slate-600 flex items-center justify-center gap-2 transition"
+                >
+                  <FileText className="w-4 h-4" /> Request Quote
+                </button>
+                <p className="text-[10px] text-slate-500 text-center">
+                  Bulk / export pricing — no payment required
                 </p>
               </div>
 
-              <button
-                onClick={() => {
-                  setIsCartOpen(false);
-                  setIsCheckoutOpen(true);
-                }}
-                className="w-full py-3.5 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-semibold rounded-xl text-sm shadow-lg shadow-sky-500/25 flex items-center justify-center gap-2 transition transform active:scale-[0.99]"
-              >
-                Proceed to Request Quote <ArrowRight className="w-4 h-4" />
-              </button>
-
               <div className="flex items-center justify-center gap-2 text-[11px] text-slate-500">
-                <ShieldCheck className="w-3.5 h-3.5 text-sky-400" /> Direct Factory Quotation Guarantee
+                <ShieldCheck className="w-3.5 h-3.5 text-sky-400" /> Direct from factory — no middlemen
               </div>
             </div>
           )}

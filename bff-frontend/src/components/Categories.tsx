@@ -1,19 +1,18 @@
 import { motion } from "framer-motion";
 import { Link } from "@tanstack/react-router";
-import { PRODUCTS, PET_FOODS } from "@/lib/products";
+import { useCatalogData } from "@/hooks/useCatalogData";
 import { PawPrint, Leaf } from "lucide-react";
 
-const CATS = [
-  { name: "Freeze-Dried Fruits", key: "Fruits", accent: "#E1B84A" },
-  { name: "Freeze-Dried Vegetables", key: "Vegetables", accent: "#5FA755", organic: true },
-  { name: "Freeze-Dried Gravies", key: "Gravies", accent: "#C33B2E" },
-  { name: "Freeze-Dried Spices", key: "Spices", accent: "#E1832E" },
-  { name: "Pre-Cooked Meals", key: "Pre-Cooked Meals", accent: "#D19A2E" },
-  { name: "Superfoods", key: "Superfoods", accent: "#8ABB4A", superfood: true },
-  { name: "Your Dog's BFF", key: "Pet Food", accent: "#D97B3D", pet: true },
-];
-
 export function Categories() {
+  const { products, categories, isLoading, error } = useCatalogData();
+  const liveCategories = categories.map((category) => ({
+    name: category.name,
+    key: category.name,
+    accent: products.find((product) => product.category === category.name)?.accent || "#76CAFF",
+    sample: products.find((product) => product.category === category.name),
+    pet: category.name.toLowerCase() === "pet food",
+  }));
+
   return (
     <section className="relative bg-background py-16 sm:py-24 md:py-32">
       <div className="mx-auto max-w-7xl px-4 md:px-6">
@@ -34,11 +33,11 @@ export function Categories() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {CATS.map((c, i) => {
-            const sample = c.pet
-              ? PET_FOODS.find((p) => p.category === c.key)
-              : PRODUCTS.find((p) => p.category === c.key);
+        {isLoading && <p className="py-12 text-center text-steel-silver">Loading categories...</p>}
+        {error && <p className="py-12 text-center text-red-300">{error}</p>}
+        {!isLoading && !error && <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {liveCategories.map((c, i) => {
+            const sample = c.sample;
             const isPet = c.pet;
             return (
               <motion.div
@@ -107,7 +106,7 @@ export function Categories() {
               </motion.div>
             );
           })}
-        </div>
+        </div>}
       </div>
     </section>
   );

@@ -5,6 +5,7 @@ import {
   PawPrint, Check,
 } from 'lucide-react';
 import { useTheme } from '@/lib/theme-context';
+import { buildWhatsAppLink } from '@/lib/whatsapp';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 gsap.registerPlugin(ScrollTrigger);
@@ -1752,7 +1753,11 @@ export default function PrivateLabel() {
                   Thank you for submitting specifications for {formBrandName || previewBrandName || 'your brand'}. Our industrial ingredients desk is processing your request and will provide sample details.
                 </p>
                 <a
-                  href={'https://wa.me/919993377038?text=Hi%20BFF%2C%20I%20just%20submitted%20a%20bulk%20inquiry%20RFQ%20for%20company%20' + encodeURIComponent(formBrandName || previewBrandName)}
+                  href={buildWhatsAppLink(
+                    undefined,
+                    undefined,
+                    `Hi BFF, I just submitted a bulk inquiry RFQ for company ${formBrandName || previewBrandName}`,
+                  )}
                   target="_blank" rel="noopener noreferrer"
                   style={{
                     padding: '12px 24px', borderRadius: '9999px', fontSize: '13.5px',

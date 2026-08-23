@@ -17,8 +17,12 @@ import { Route as InquiryRouteImport } from './routes/inquiry'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as B2bRouteImport } from './routes/b2b'
 import { Route as AdminRouteImport } from './routes/admin'
+import { Route as AccountRouteImport } from './routes/account'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminLoginRouteImport } from './routes/admin/login'
+import { Route as AccountOrdersRouteImport } from './routes/account/orders'
+import { Route as AccountOrdersIdRouteImport } from './routes/account/orders/$id'
 
 const RecipesRoute = RecipesRouteImport.update({
   id: '/recipes',
@@ -60,6 +64,11 @@ const AdminRoute = AdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountRoute = AccountRouteImport.update({
+  id: '/account',
+  path: '/account',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AboutRoute = AboutRouteImport.update({
   id: '/about',
   path: '/about',
@@ -70,11 +79,27 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminLoginRoute = AdminLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AccountOrdersRoute = AccountOrdersRouteImport.update({
+  id: '/orders',
+  path: '/orders',
+  getParentRoute: () => AccountRoute,
+} as any)
+const AccountOrdersIdRoute = AccountOrdersIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AccountOrdersRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/admin': typeof AdminRoute
+  '/account': typeof AccountRouteWithChildren
+  '/admin': typeof AdminRouteWithChildren
   '/b2b': typeof B2bRoute
   '/contact': typeof ContactRoute
   '/inquiry': typeof InquiryRoute
@@ -82,11 +107,15 @@ export interface FileRoutesByFullPath {
   '/private-label': typeof PrivateLabelRoute
   '/products': typeof ProductsRoute
   '/recipes': typeof RecipesRoute
+  '/account/orders': typeof AccountOrdersRouteWithChildren
+  '/admin/login': typeof AdminLoginRoute
+  '/account/orders/$id': typeof AccountOrdersIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/admin': typeof AdminRoute
+  '/account': typeof AccountRouteWithChildren
+  '/admin': typeof AdminRouteWithChildren
   '/b2b': typeof B2bRoute
   '/contact': typeof ContactRoute
   '/inquiry': typeof InquiryRoute
@@ -94,12 +123,16 @@ export interface FileRoutesByTo {
   '/private-label': typeof PrivateLabelRoute
   '/products': typeof ProductsRoute
   '/recipes': typeof RecipesRoute
+  '/account/orders': typeof AccountOrdersRouteWithChildren
+  '/admin/login': typeof AdminLoginRoute
+  '/account/orders/$id': typeof AccountOrdersIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/admin': typeof AdminRoute
+  '/account': typeof AccountRouteWithChildren
+  '/admin': typeof AdminRouteWithChildren
   '/b2b': typeof B2bRoute
   '/contact': typeof ContactRoute
   '/inquiry': typeof InquiryRoute
@@ -107,12 +140,16 @@ export interface FileRoutesById {
   '/private-label': typeof PrivateLabelRoute
   '/products': typeof ProductsRoute
   '/recipes': typeof RecipesRoute
+  '/account/orders': typeof AccountOrdersRouteWithChildren
+  '/admin/login': typeof AdminLoginRoute
+  '/account/orders/$id': typeof AccountOrdersIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/about'
+    | '/account'
     | '/admin'
     | '/b2b'
     | '/contact'
@@ -121,10 +158,14 @@ export interface FileRouteTypes {
     | '/private-label'
     | '/products'
     | '/recipes'
+    | '/account/orders'
+    | '/admin/login'
+    | '/account/orders/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/about'
+    | '/account'
     | '/admin'
     | '/b2b'
     | '/contact'
@@ -133,10 +174,14 @@ export interface FileRouteTypes {
     | '/private-label'
     | '/products'
     | '/recipes'
+    | '/account/orders'
+    | '/admin/login'
+    | '/account/orders/$id'
   id:
     | '__root__'
     | '/'
     | '/about'
+    | '/account'
     | '/admin'
     | '/b2b'
     | '/contact'
@@ -145,12 +190,16 @@ export interface FileRouteTypes {
     | '/private-label'
     | '/products'
     | '/recipes'
+    | '/account/orders'
+    | '/admin/login'
+    | '/account/orders/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
-  AdminRoute: typeof AdminRoute
+  AccountRoute: typeof AccountRouteWithChildren
+  AdminRoute: typeof AdminRouteWithChildren
   B2bRoute: typeof B2bRoute
   ContactRoute: typeof ContactRoute
   InquiryRoute: typeof InquiryRoute
@@ -218,6 +267,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/account': {
+      id: '/account'
+      path: '/account'
+      fullPath: '/account'
+      preLoaderRoute: typeof AccountRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/about': {
       id: '/about'
       path: '/about'
@@ -232,13 +288,68 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/login': {
+      id: '/admin/login'
+      path: '/login'
+      fullPath: '/admin/login'
+      preLoaderRoute: typeof AdminLoginRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/account/orders': {
+      id: '/account/orders'
+      path: '/orders'
+      fullPath: '/account/orders'
+      preLoaderRoute: typeof AccountOrdersRouteImport
+      parentRoute: typeof AccountRoute
+    }
+    '/account/orders/$id': {
+      id: '/account/orders/$id'
+      path: '/$id'
+      fullPath: '/account/orders/$id'
+      preLoaderRoute: typeof AccountOrdersIdRouteImport
+      parentRoute: typeof AccountOrdersRoute
+    }
   }
 }
+
+interface AccountOrdersRouteChildren {
+  AccountOrdersIdRoute: typeof AccountOrdersIdRoute
+}
+
+const AccountOrdersRouteChildren: AccountOrdersRouteChildren = {
+  AccountOrdersIdRoute: AccountOrdersIdRoute,
+}
+
+const AccountOrdersRouteWithChildren = AccountOrdersRoute._addFileChildren(
+  AccountOrdersRouteChildren,
+)
+
+interface AccountRouteChildren {
+  AccountOrdersRoute: typeof AccountOrdersRouteWithChildren
+}
+
+const AccountRouteChildren: AccountRouteChildren = {
+  AccountOrdersRoute: AccountOrdersRouteWithChildren,
+}
+
+const AccountRouteWithChildren =
+  AccountRoute._addFileChildren(AccountRouteChildren)
+
+interface AdminRouteChildren {
+  AdminLoginRoute: typeof AdminLoginRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminLoginRoute: AdminLoginRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
-  AdminRoute: AdminRoute,
+  AccountRoute: AccountRouteWithChildren,
+  AdminRoute: AdminRouteWithChildren,
   B2bRoute: B2bRoute,
   ContactRoute: ContactRoute,
   InquiryRoute: InquiryRoute,

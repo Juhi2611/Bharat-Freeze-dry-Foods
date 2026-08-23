@@ -13,6 +13,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTheme } from "@/lib/theme-context";
 import AboutLight from "@/components/light/About.jsx";
 import HumanNutritionLight from "@/components/light/HumanNutrition.jsx";
+import { buildWhatsAppLink } from "@/lib/whatsapp";
 
 export const Route = createFileRoute("/about")({
   head: () => ({
@@ -233,7 +234,7 @@ function HumanNutritionSection() {
               <Link to="/contact" className="rounded-full bg-gradient-primary-cta px-6 py-3.5 text-xs font-bold uppercase tracking-widest text-white shadow-frost">
                 Get Retail Catalog
               </Link>
-              <a href="https://wa.me/919993377038" target="_blank" rel="noopener noreferrer" className="rounded-full border border-green-500/40 bg-green-950/40 px-6 py-3.5 text-xs font-bold uppercase tracking-widest text-green-400">
+              <a href={buildWhatsAppLink()} target="_blank" rel="noopener noreferrer" className="rounded-full border border-green-500/40 bg-green-950/40 px-6 py-3.5 text-xs font-bold uppercase tracking-widest text-green-400">
                 WhatsApp Now
               </a>
             </div>

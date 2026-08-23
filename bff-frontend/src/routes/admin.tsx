@@ -1,6 +1,7 @@
-import { useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
-import { AdminSidebar, type AdminTab } from "@/components/admin/AdminSidebar";
+import { useEffect, useState } from "react";
+import { Outlet, createFileRoute, useLocation, useNavigate } from "@tanstack/react-router";
+import { useAuth } from "@/context/AuthContext";
+import { AdminSidebar, isAdminTabAllowed, type AdminTab } from "@/components/admin/AdminSidebar";
 import { AdminHeader } from "@/components/admin/AdminHeader";
 import { AdminOverview } from "@/components/admin/AdminOverview";
 import { AdminProducts } from "@/components/admin/AdminProducts";
@@ -29,13 +30,48 @@ export const Route = createFileRoute("/admin")({
 });
 
 function AdminPage() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const [activeTab, setActiveTabState] = useState<AdminTab>("dashboard");
   const [historyStack, setHistoryStack] = useState<AdminTab[]>(["dashboard"]);
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [selectedEnquiryId, setSelectedEnquiryId] = useState<string | null>(null);
 
+  const hasAdminAccess = isAuthenticated && user?.role !== "customer";
+
+  useEffect(() => {
+    if (location.pathname === "/admin/login") return;
+
+    if (!isLoading && !hasAdminAccess) {
+      void navigate({ to: "/admin/login", replace: true });
+    }
+  }, [hasAdminAccess, isLoading, location.pathname, navigate]);
+
+  // B10 / F10: bounce off CRM/settings tabs the role cannot access.
+  useEffect(() => {
+    if (!hasAdminAccess) return;
+    if (!isAdminTabAllowed(activeTab, user?.role)) {
+      setActiveTabState("dashboard");
+      setHistoryStack(["dashboard"]);
+    }
+  }, [activeTab, hasAdminAccess, user?.role]);
+
+  if (location.pathname === "/admin/login") {
+    return <Outlet />;
+  }
+
+  if (isLoading || !hasAdminAccess) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-deep-navy text-sm text-steel-silver">
+        {isLoading ? "Checking administrator access..." : "Redirecting to administrator sign in..."}
+      </div>
+    );
+  }
+
   const setActiveTab = (newTab: AdminTab) => {
+    if (!isAdminTabAllowed(newTab, user?.role)) return;
     if (newTab !== activeTab) {
       setHistoryStack((prev) => [...prev, newTab]);
       setActiveTabState(newTab);
@@ -46,7 +82,16 @@ function AdminPage() {
     if (historyStack.length > 1) {
       const newStack = [...historyStack];
       newStack.pop();
-      const prevTab = newStack[newStack.length - 1];
+      let prevTab = newStack[newStack.length - 1];
+      while (newStack.length > 1 && !isAdminTabAllowed(prevTab, user?.role)) {
+        newStack.pop();
+        prevTab = newStack[newStack.length - 1];
+      }
+      if (!isAdminTabAllowed(prevTab, user?.role)) {
+        setHistoryStack(["dashboard"]);
+        setActiveTabState("dashboard");
+        return;
+      }
       setHistoryStack(newStack);
       setActiveTabState(prevTab);
     } else {
@@ -82,7 +127,7 @@ function AdminPage() {
 
       {/* Main Dynamic Content Area */}
       <main
-        className={`p-4 sm:p-8 transition-all duration-300 ${
+        className={`p-3 sm:p-5 lg:p-6 transition-all duration-300 ${
           collapsed ? "md:ml-20" : "md:ml-64"
         }`}
       >

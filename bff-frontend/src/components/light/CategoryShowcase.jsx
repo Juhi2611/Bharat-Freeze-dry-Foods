@@ -2,62 +2,13 @@ import { Link } from '@tanstack/react-router';
 
 import { Leaf, PawPrint, ArrowRight } from 'lucide-react';
 
-const categories = [
-  {
-    name: 'Freeze-Dried Fruits',
-    key: 'Fruits',
-    image: '/images/fruits_hero.png',
-    accent: '#2D7A3A',
-    href: '/products?category=Fruits',
-  },
-  {
-    name: 'Freeze-Dried Vegetables',
-    key: 'Vegetables',
-    image: '/images/vegetables_hero.png',
-    accent: '#3A9148',
-    organic: true,
-    href: '/products?category=Vegetables',
-  },
-  {
-    name: 'Freeze-Dried Gravies',
-    key: 'Gravies',
-    image: '/images/gravies_sauces.png',
-    accent: '#E53935',
-    href: '/products?category=Gravies',
-  },
-  {
-    name: 'Freeze-Dried Spices',
-    key: 'Spices',
-    image: '/images/spices_hero.png',
-    accent: '#FF7043',
-    href: '/products?category=Spices',
-  },
-  {
-    name: 'Pre-Cooked Meals',
-    key: 'Meals',
-    image: '/images/precooked_hero.png',
-    accent: '#D19A2E',
-    href: '/products?category=Pre-Cooked+Meals',
-  },
-  {
-    name: 'Superfoods',
-    key: 'Superfoods',
-    image: '/images/superfoods_hero.png',
-    accent: '#8BC34A',
-    superfood: true,
-    href: '/products?category=Superfoods',
-  },
-  {
-    name: "Your Dog's BFF",
-    key: 'Pet',
-    image: '/images/pet_treats.png',
-    accent: '#FF7043',
-    pet: true,
-    href: '/pet-foods',
-  },
-];
-
-export default function CategoryShowcase() {
+export default function CategoryShowcase({ categories = [], products = [], isLoading = false, error = null }) {
+  const categoryList = Array.isArray(categories) ? categories : [];
+  const productList = Array.isArray(products) ? products : [];
+  const liveCategories = categoryList.map((category) => {
+    const sample = productList.find((product) => product.category === category.name);
+    return { ...category, image: sample?.packImage, accent: sample?.accent || 'var(--green)', href: category.name.toLowerCase() === 'pet food' ? '/pet-foods' : `/products?category=${encodeURIComponent(category.name)}` };
+  });
   return (
     <section className="section" style={{ background: 'var(--white)', position: 'relative', overflow: 'hidden' }}>
       <div className="container">
@@ -113,7 +64,9 @@ export default function CategoryShowcase() {
           gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
           gap: '24px',
         }}>
-          {categories.map((c, i) => {
+          {isLoading && <p>Loading categories...</p>}
+          {error && <p style={{ color: 'var(--red)' }}>{error}</p>}
+          {!isLoading && !error && liveCategories.map((c, i) => {
             const isWide = c.key === 'Fruits' || c.key === 'Superfoods';
             return (
               <Link
@@ -146,15 +99,18 @@ export default function CategoryShowcase() {
                 }}
               >
                 {/* Background Image */}
-                <img
+                {c.image && <img
                   src={c.image}
                   alt={c.name}
-                  fill
                   style={{
+                    position: 'absolute',
+                    inset: 0,
+                    width: '100%',
+                    height: '100%',
                     objectFit: 'cover',
                     transition: 'transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
                   }}
-                />
+                />}
 
                 {/* Dark Gradient Overlay for legible white text */}
                 <div style={{

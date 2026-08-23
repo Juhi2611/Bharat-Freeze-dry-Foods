@@ -8,11 +8,11 @@ from .models import (
     Certification, CompanyTimelineEntry, FounderMessage, QualityAssuranceStep
 )
 from .serializers import (
-    WebsiteSectionSerializer, SiteSettingsSerializer, FAQSerializer,
+    WebsiteSectionSerializer, SiteSettingsSerializer, PublicContactSerializer, FAQSerializer,
     RegionComplianceProfileSerializer, CertificationSerializer,
     CompanyTimelineEntrySerializer, FounderMessageSerializer, QualityAssuranceStepSerializer
 )
-from apps.users.permissions import IsAdminRole
+from apps.users.permissions import IsContentStaff
 
 class WebsiteSectionViewSet(viewsets.ModelViewSet):
     queryset = WebsiteSection.objects.all()
@@ -21,13 +21,13 @@ class WebsiteSectionViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:
             return [permissions.AllowAny()]
-        return [IsAdminRole()]
+        return [IsContentStaff()]
 
 class SiteSettingsView(APIView):
     def get_permissions(self):
         if self.request.method == 'GET':
-            return [permissions.AllowAny()]
-        return [IsAdminRole()]
+            return [IsContentStaff()]
+        return [IsContentStaff()]
 
     def get(self, request):
         settings, _ = SiteSettings.objects.get_or_create(pk=1)
@@ -42,6 +42,18 @@ class SiteSettingsView(APIView):
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
+class PublicContactView(APIView):
+    """Read-only storefront contact info — no auth, narrow field set."""
+
+    permission_classes = [permissions.AllowAny]
+    authentication_classes = []
+
+    def get(self, request):
+        settings, _ = SiteSettings.objects.get_or_create(pk=1)
+        serializer = PublicContactSerializer(settings)
+        return Response(serializer.data)
+
 class FAQViewSet(viewsets.ModelViewSet):
     queryset = FAQ.objects.filter(is_published=True)
     serializer_class = FAQSerializer
@@ -53,7 +65,7 @@ class FAQViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:
             return [permissions.AllowAny()]
-        return [IsAdminRole()]
+        return [IsContentStaff()]
 
 class RegionComplianceProfileViewSet(viewsets.ModelViewSet):
     queryset = RegionComplianceProfile.objects.all()
@@ -63,7 +75,7 @@ class RegionComplianceProfileViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:
             return [permissions.AllowAny()]
-        return [IsAdminRole()]
+        return [IsContentStaff()]
 
 class CertificationViewSet(viewsets.ModelViewSet):
     queryset = Certification.objects.all()
@@ -75,7 +87,7 @@ class CertificationViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:
             return [permissions.AllowAny()]
-        return [IsAdminRole()]
+        return [IsContentStaff()]
 
 class CompanyTimelineEntryViewSet(viewsets.ModelViewSet):
     queryset = CompanyTimelineEntry.objects.all()
@@ -85,13 +97,13 @@ class CompanyTimelineEntryViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:
             return [permissions.AllowAny()]
-        return [IsAdminRole()]
+        return [IsContentStaff()]
 
 class FounderMessageView(APIView):
     def get_permissions(self):
         if self.request.method == 'GET':
             return [permissions.AllowAny()]
-        return [IsAdminRole()]
+        return [IsContentStaff()]
 
     def get(self, request):
         msg, _ = FounderMessage.objects.get_or_create(pk=1)
@@ -114,4 +126,4 @@ class QualityAssuranceStepViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:
             return [permissions.AllowAny()]
-        return [IsAdminRole()]
+        return [IsContentStaff()]

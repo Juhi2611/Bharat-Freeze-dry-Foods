@@ -1,5 +1,8 @@
 import uuid
-from django.db import models
+from django.db import IntegrityError, models, transaction
+
+from config.business_codes import allocate_prefixed_code
+
 
 class Enquiry(models.Model):
     class Status(models.TextChoices):
@@ -75,10 +78,23 @@ class Enquiry(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def save(self, *args, **kwargs):
-        if not self.enquiry_code:
-            count = Enquiry.objects.count() + 9000
-            self.enquiry_code = f"ENQ-{count + 1}"
-        super().save(*args, **kwargs)
+        if self.enquiry_code:
+            return super().save(*args, **kwargs)
+        last_error = None
+        for _ in range(12):
+            self.enquiry_code = allocate_prefixed_code(
+                model=Enquiry,
+                field='enquiry_code',
+                prefix='ENQ',
+                offset=9000,
+            )
+            try:
+                with transaction.atomic():
+                    return super().save(*args, **kwargs)
+            except IntegrityError as exc:
+                last_error = exc
+                self.enquiry_code = ''
+        raise last_error
 
     def __str__(self):
         return f"{self.enquiry_code} - {self.company_name}"
@@ -164,10 +180,23 @@ class PrivateLabelEnquiry(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def save(self, *args, **kwargs):
-        if not self.enquiry_code:
-            count = PrivateLabelEnquiry.objects.count() + 5000
-            self.enquiry_code = f"PL-{count + 1}"
-        super().save(*args, **kwargs)
+        if self.enquiry_code:
+            return super().save(*args, **kwargs)
+        last_error = None
+        for _ in range(12):
+            self.enquiry_code = allocate_prefixed_code(
+                model=PrivateLabelEnquiry,
+                field='enquiry_code',
+                prefix='PL',
+                offset=5000,
+            )
+            try:
+                with transaction.atomic():
+                    return super().save(*args, **kwargs)
+            except IntegrityError as exc:
+                last_error = exc
+                self.enquiry_code = ''
+        raise last_error
 
     def __str__(self):
         return f"{self.enquiry_code} - {self.brand_name or self.company_name}"

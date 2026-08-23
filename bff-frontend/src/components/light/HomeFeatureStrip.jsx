@@ -108,8 +108,14 @@ export default function HomeFeatureStrip() {
                 <img
                   src={f.image}
                   alt={f.label}
-                  fill
-                  style={{ objectFit: 'cover', transition: 'transform 0.5s ease' }}
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    transition: 'transform 0.5s ease',
+                  }}
                 />
                 <div
                   className="card-overlay"

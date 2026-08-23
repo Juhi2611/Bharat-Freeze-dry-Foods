@@ -13,13 +13,33 @@ except ImportError:
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 env = environ.Env(
-    DEBUG=(bool, False)
+    DEBUG=(bool, False),
 )
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
-SECRET_KEY = env('SECRET_KEY', default='django-insecure-bff-super-secret-key-change-in-production-2026')
-DEBUG = env('DEBUG', default=True)
-ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['*'])
+from config.security import (  # noqa: E402
+    INSECURE_DEFAULT_SECRET_KEY,
+    validate_production_settings,
+)
+
+# Fail closed: DEBUG defaults to False unless explicitly enabled.
+DEBUG = env.bool('DEBUG', default=False)
+
+# SECRET_KEY: insecure default only allowed while DEBUG=True (local/dev).
+# Production (DEBUG=False) must set SECRET_KEY explicitly — see validate_production_settings.
+SECRET_KEY = env('SECRET_KEY', default=INSECURE_DEFAULT_SECRET_KEY)
+
+# Localhost-only default for local/dev. Production must set ALLOWED_HOSTS explicitly.
+ALLOWED_HOSTS = env.list(
+    'ALLOWED_HOSTS',
+    default=['localhost', '127.0.0.1'] if DEBUG else [],
+)
+
+validate_production_settings(
+    debug=DEBUG,
+    secret_key=SECRET_KEY,
+    allowed_hosts=ALLOWED_HOSTS,
+)
 
 # Custom User Model
 AUTH_USER_MODEL = 'users.User'
@@ -36,6 +56,7 @@ INSTALLED_APPS = [
     # Third Party Packages
     'rest_framework',
     'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
     'django_filters',
     'drf_spectacular',
@@ -112,6 +133,10 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+    # B11: fail closed — views must explicitly AllowAny when public.
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
     'DEFAULT_FILTER_BACKENDS': (
         'django_filters.rest_framework.DjangoFilterBackend',
         'rest_framework.filters.SearchFilter',
@@ -120,26 +145,67 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    # otp_send: IP throttle for POST /auth/send-otp/ (see SendOTPIPThrottle).
+    'DEFAULT_THROTTLE_RATES': {
+        'otp_send': '10/hour',
+    },
 }
 
 # Simple JWT Settings
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(hours=8),
+    # B12: short-lived access; silent refresh (F5) renews transparently.
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
     'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
-# CORS Configuration
-CORS_ALLOW_ALL_ORIGINS = True
+# CORS — never allow all origins. Configure CORS_ALLOWED_ORIGINS for staging/production.
+# Local dev ports: 8080 (TanStack/Lovable), 5173 (Vite), 8082, 3000.
+CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOWED_ORIGINS = env.list('CORS_ALLOWED_ORIGINS', default=[
-    'http://localhost:8082',
-    'http://127.0.0.1:8082',
-    'http://localhost:5173',
-    'http://127.0.0.1:5173',
-    'http://localhost:3000',
-])
+CORS_ALLOWED_ORIGINS = env.list(
+    'CORS_ALLOWED_ORIGINS',
+    default=[
+        'http://localhost:8080',
+        'http://127.0.0.1:8080',
+        'http://localhost:8082',
+        'http://127.0.0.1:8082',
+        'http://localhost:5173',
+        'http://127.0.0.1:5173',
+        'http://localhost:3000',
+        'http://127.0.0.1:3000',
+    ] if DEBUG else [],
+)
+
+if not DEBUG and not CORS_ALLOWED_ORIGINS:
+    from django.core.exceptions import ImproperlyConfigured
+
+    raise ImproperlyConfigured(
+        'CORS_ALLOWED_ORIGINS must be set when DEBUG is False '
+        '(comma-separated frontend origins, e.g. https://www.example.com).'
+    )
+
+# CSRF trusted origins must match SPA origins when frontend/API are on different
+# hosts/ports (required for cookie-authenticated refresh/logout with X-CSRFToken).
+CSRF_TRUSTED_ORIGINS = env.list(
+    'CSRF_TRUSTED_ORIGINS',
+    default=list(CORS_ALLOWED_ORIGINS) if DEBUG else [],
+)
+if not DEBUG and not CSRF_TRUSTED_ORIGINS:
+    from django.core.exceptions import ImproperlyConfigured
+
+    raise ImproperlyConfigured(
+        'CSRF_TRUSTED_ORIGINS must be set when DEBUG is False '
+        '(comma-separated frontend origins, e.g. https://www.example.com).'
+    )
+
+# F5 refresh cookie: httpOnly; Secure in production; SameSite=Lax for same-site
+# SPA<->API (e.g. www + api subdomains). Use SameSite=None only if frontend and API
+# are truly cross-site (different registrable domains) — then Secure must be True.
+REFRESH_COOKIE_SECURE = env.bool('REFRESH_COOKIE_SECURE', default=not DEBUG)
+REFRESH_COOKIE_SAMESITE = env('REFRESH_COOKIE_SAMESITE', default='Lax')
 
 # OpenAPI Schema Metadata
 SPECTACULAR_SETTINGS = {
@@ -147,3 +213,24 @@ SPECTACULAR_SETTINGS = {
     'DESCRIPTION': 'REST API engine powering the BFF public marketplace and B2B admin dashboard.',
     'VERSION': '1.0.0',
 }
+
+# Razorpay config: use test keys in development and swap to production keys before go-live.
+RAZORPAY_KEY_ID = env('RAZORPAY_KEY_ID', default='')
+RAZORPAY_KEY_SECRET = env('RAZORPAY_KEY_SECRET', default='')
+RAZORPAY_WEBHOOK_SECRET = env('RAZORPAY_WEBHOOK_SECRET', default='')
+
+# Email — console backend locally; set EMAIL_HOST* in .env for real SMTP delivery.
+EMAIL_BACKEND = env(
+    'EMAIL_BACKEND',
+    default='django.core.mail.backends.console.EmailBackend',
+)
+EMAIL_HOST = env('EMAIL_HOST', default='localhost')
+EMAIL_PORT = env.int('EMAIL_PORT', default=587)
+EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')
+EMAIL_USE_TLS = env.bool('EMAIL_USE_TLS', default=True)
+DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='noreply@bff-foods.com')
+
+# Unpaid checkout stock hold TTL (minutes). release_abandoned_orders restores
+# stock for orders older than this that never reached a paid/terminal status.
+ABANDONED_ORDER_TIMEOUT_MINUTES = env.int('ABANDONED_ORDER_TIMEOUT_MINUTES', default=45)

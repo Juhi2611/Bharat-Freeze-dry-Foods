@@ -1,4 +1,5 @@
 import { useRef, useEffect, useState } from 'react';
+import { buildWhatsAppLink } from '@/lib/whatsapp';
 
 import {
   PlaneTakeoff, Dumbbell, Baby, Briefcase,
@@ -127,7 +128,7 @@ export default function HumanNutrition() {
                 style={{ background: 'white', color: 'var(--green-deep)', padding: '14px 28px', borderRadius: 'var(--radius-full)', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '14px' }}>
                 Get Retail Catalog
               </a>
-              <a href="https://wa.me/919993377038" target="_blank" rel="noopener noreferrer"
+              <a href={buildWhatsAppLink()} target="_blank" rel="noopener noreferrer"
                 className="btn btn-whatsapp" style={{ padding: '14px 24px' }}>
                 WhatsApp Now
               </a>
@@ -197,7 +198,11 @@ export default function HumanNutrition() {
             marginTop: '48px', position: 'relative',
             borderRadius: 'var(--radius-xl)', overflow: 'hidden', height: '320px',
           }}>
-            <img src="/images/quality_facility.png" alt="BFF Quality Facility" fill style={{ objectFit: 'cover' }} />
+            <img
+              src="/images/quality_facility.png"
+              alt="BFF Quality Facility"
+              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+            />
             <div style={{
               position: 'absolute', inset: 0,
               background: 'linear-gradient(90deg, rgba(5,15,8,0.85) 0%, rgba(5,15,8,0.3) 50%, rgba(5,15,8,0.7) 100%)',

@@ -2,9 +2,21 @@ from rest_framework import serializers
 from .models import Category, Product, Recipe, InteractiveExperience
 
 class CategorySerializer(serializers.ModelSerializer):
+    product_count = serializers.SerializerMethodField()
+
     class Meta:
         model = Category
-        fields = '__all__'
+        fields = [
+            'id', 'name', 'slug', 'description', 'cover_image',
+            'availability', 'display_order', 'created_at', 'product_count',
+        ]
+        read_only_fields = ['id', 'slug', 'created_at', 'product_count']
+
+    def get_product_count(self, obj):
+        annotated = getattr(obj, 'product_count', None)
+        if annotated is not None:
+            return annotated
+        return obj.products.count()
 
 class RecipeSerializer(serializers.ModelSerializer):
     class Meta:

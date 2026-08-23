@@ -22,10 +22,15 @@ export function ProductCard({ product }: { product: Product }) {
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.stopPropagation();
+    // Catalog UUID only — never SKU/name (those are display fields; checkout requires product.id).
+    if (!product.id) {
+      console.error('Cannot add to cart: product is missing catalog UUID', product);
+      return;
+    }
     addToCart(
       {
-        id: product.sku || product.name,
-        sku: product.sku || 'SKU-001',
+        id: product.id,
+        sku: product.sku || '',
         name: product.name,
         price_inr: parseFloat(product.price.replace(/[^0-9.]/g, '')) || 250,
         pack_image: product.packImage,

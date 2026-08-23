@@ -1,11 +1,9 @@
 import { createFileRoute, Link, useLocation } from "@tanstack/react-router";
-import { PRODUCTS, type Product } from "@/lib/products";
+import type { Product } from "@/lib/products";
+import { useCatalogData } from "@/hooks/useCatalogData";
 import { useEffect, useRef, useState } from "react";
 import { X, Volume2, VolumeX, Bookmark, Clock, ChefHat, Flame } from "lucide-react";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
-
-// get all products that have recipes
-const recipeProducts = PRODUCTS.filter((p) => p.recipe);
 
 export const Route = createFileRoute("/recipes")({
   head: () => ({
@@ -17,7 +15,9 @@ export const Route = createFileRoute("/recipes")({
 });
 
 function RecipesPage() {
-  const [activeSlug, setActiveSlug] = useState(recipeProducts[0]?.recipe?.slug);
+  const { products, isLoading, error } = useCatalogData();
+  const recipeProducts = products.filter((product) => product.recipe);
+  const [activeSlug, setActiveSlug] = useState<string | undefined>();
   const location = useLocation();
 
   useEffect(() => {
@@ -30,10 +30,14 @@ function RecipesPage() {
     }
   }, [location.hash]);
 
-  if (recipeProducts.length === 0) {
+  if (isLoading) {
+    return <div className="fixed inset-0 z-[100] flex items-center justify-center bg-deep-navy text-frost-white">Loading recipes...</div>;
+  }
+
+  if (error || recipeProducts.length === 0) {
     return (
       <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-deep-navy text-frost-white">
-        <p className="text-xl">No recipes found yet.</p>
+        <p className="text-xl">{error || "No recipes found yet."}</p>
         <Link to="/products" search={{ category: undefined }} className="mt-4 border border-white/20 px-6 py-3 rounded-full hover:bg-white/10 transition">Go Back</Link>
       </div>
     );

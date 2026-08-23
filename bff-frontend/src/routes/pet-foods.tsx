@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import { ProductCard } from "@/components/ProductCard";
-import { PET_FOODS } from "@/lib/products";
+import { useCatalogData } from "@/hooks/useCatalogData";
 import { FrostParticles } from "@/components/FrostParticles";
 import { useTheme } from "@/lib/theme-context";
 import PetFoodsLight from "@/components/light/PetFoods.jsx";
@@ -77,6 +77,7 @@ function LoopingTypedText({
 
 function PetFoodsPage() {
   const { theme } = useTheme();
+  const catalog = useCatalogData();
 
   if (theme === "light") {
     return (
@@ -99,7 +100,7 @@ function PetFoodsPage() {
             </p>
           </div>
         </section>
-        <PetFoodsLight />
+        <PetFoodsLight products={catalog.products} isLoading={catalog.isLoading} error={catalog.error} />
       </main>
     );
   }
@@ -169,7 +170,9 @@ function PetFoodsPage() {
               transition={{ duration: 0.4 }}
               className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
             >
-              {PET_FOODS.map((p) => (
+              {catalog.isLoading && <p className="col-span-full py-16 text-center text-steel-silver">Loading pet foods...</p>}
+              {!catalog.isLoading && catalog.error && <p className="col-span-full py-16 text-center text-red-300">{catalog.error}</p>}
+              {!catalog.isLoading && !catalog.error && catalog.products.filter((p) => p.category.toLowerCase() === "pet food").map((p) => (
                 <motion.div
                   key={p.id}
                   layout
@@ -182,7 +185,7 @@ function PetFoodsPage() {
               ))}
             </motion.div>
           </AnimatePresence>
-          {PET_FOODS.length === 0 && (
+          {!catalog.isLoading && !catalog.error && catalog.products.filter((p) => p.category.toLowerCase() === "pet food").length === 0 && (
             <p className="py-16 text-center text-steel-silver">No pet foods available right now.</p>
           )}
         </div>

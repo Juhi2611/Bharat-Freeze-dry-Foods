@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import {
@@ -12,12 +12,28 @@ import {
   X,
   Sparkles,
 } from "lucide-react";
-import { DUMMY_MEDIA, type MediaFileItem } from "./adminData";
+import { type MediaFileItem } from "./adminData";
+import { api } from "@/services/api";
 
 export function AdminMediaLibrary() {
-  const [mediaFiles, setMediaFiles] = useState<MediaFileItem[]>(DUMMY_MEDIA);
+  const [mediaFiles, setMediaFiles] = useState<MediaFileItem[]>([]);
   const [search, setSearch] = useState("");
   const [previewFile, setPreviewFile] = useState<MediaFileItem | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    void api.getMediaFiles().then((files) => {
+      setMediaFiles(files.map((file) => ({
+        id: file.id,
+        name: file.file_name,
+        size: `${file.file_size_mb} MB`,
+        dimensions: file.dimensions,
+        category: file.category,
+        url: file.file_url,
+        uploadedAt: file.uploaded_at,
+      })));
+    }).catch((error) => setLoadError(error instanceof Error ? error.message : "Unable to load media files."));
+  }, []);
 
   const filtered = mediaFiles.filter((m) =>
     m.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -30,9 +46,11 @@ export function AdminMediaLibrary() {
   };
 
   const handleDelete = (id: string) => {
-    setMediaFiles((prev) => prev.filter((m) => m.id !== id));
-    toast.success("File removed from media library");
-    setPreviewFile(null);
+    void api.deleteMediaFile(id).then(() => {
+      setMediaFiles((prev) => prev.filter((m) => m.id !== id));
+      toast.success("File removed from media library");
+      setPreviewFile(null);
+    }).catch((error) => setLoadError(error instanceof Error ? error.message : "Unable to delete media file."));
   };
 
   return (
@@ -53,6 +71,8 @@ export function AdminMediaLibrary() {
           <UploadCloud className="h-4 w-4" /> Upload New Asset
         </button>
       </div>
+
+      {loadError && <div role="alert" className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-300">{loadError}</div>}
 
       {/* UPLOAD DROPZONE */}
       <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-white/20 bg-card/40 p-8 text-center backdrop-blur-xl hover:border-ice-blue/50 transition-all cursor-pointer">

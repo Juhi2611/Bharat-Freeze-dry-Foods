@@ -1,11 +1,17 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { api, UserProfile, clearStoredTokens, getStoredToken } from '../services/api';
+import {
+  api,
+  UserProfile,
+  clearStoredTokens,
+  getStoredToken,
+  refreshAccessToken,
+} from '../services/api';
 
 interface AuthContextType {
   user: UserProfile | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<UserProfile>;
   register: (payload: {
     email: string;
     password: string;
@@ -14,7 +20,7 @@ interface AuthContextType {
     company_name?: string;
     country?: string;
   }) => Promise<void>;
-  logout: () => void;
+  logout: (redirectTo?: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -25,18 +31,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const initializeAuth = async () => {
-      const token = getStoredToken();
-      if (token) {
-        try {
+      try {
+        // F5: access is memory-only; recover session via httpOnly refresh cookie.
+        let token = getStoredToken();
+        if (!token) {
+          token = await refreshAccessToken(false);
+        }
+        if (token) {
           const profile = await api.getMe();
           setUser(profile);
-        } catch (err) {
-          console.error('Failed to restore auth session:', err);
-          clearStoredTokens();
+        } else {
           setUser(null);
         }
+      } catch (err) {
+        console.error('Failed to restore auth session:', err);
+        clearStoredTokens();
+        setUser(null);
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
 
     initializeAuth();
@@ -45,6 +58,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string) => {
     const res = await api.login(email, password);
     setUser(res.user);
+    return res.user;
   };
 
   const register = async (payload: {
@@ -59,9 +73,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(res.user);
   };
 
-  const logout = () => {
-    clearStoredTokens();
-    setUser(null);
+  const logout = (redirectTo?: string) => {
+    void (async () => {
+      try {
+        await api.logout();
+      } catch {
+        clearStoredTokens();
+      }
+      setUser(null);
+      if (redirectTo && typeof window !== 'undefined') {
+        window.location.assign(redirectTo);
+      }
+    })();
   };
 
   return (

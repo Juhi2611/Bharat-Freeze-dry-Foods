@@ -1,10 +1,10 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Phone, ShoppingBag, User, LogOut } from "lucide-react";
+import { Menu, X, Phone, ShoppingBag, User, LogOut, LayoutDashboard } from "lucide-react";
 import { SocialIcons } from "./SocialIcons";
 import { FrostParticles } from "./FrostParticles";
-import { PHONE_DISPLAY, PHONE_TEL } from "@/lib/whatsapp";
+import { PHONE_DISPLAY, PHONE_TEL, buildWhatsAppLink } from "@/lib/whatsapp";
 import { UnifiedFooter } from "./UnifiedFooter";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
@@ -71,7 +71,7 @@ export function SiteNav() {
             BFF
           </span>
           <span
-            className={`hidden text-[0.6rem] font-medium uppercase tracking-[0.24em] text-steel-silver transition-opacity md:block ${
+            className={`hidden text-[0.6rem] font-medium uppercase tracking-[0.24em] text-steel-silver transition-opacity sm:block ${
               scrolled ? "opacity-0" : "opacity-100"
             }`}
           >
@@ -80,7 +80,7 @@ export function SiteNav() {
         </Link>
 
         {/* Desktop Navigation Links */}
-        <div className="hidden items-center gap-6 md:flex">
+        <div className="hidden items-center gap-6 xl:flex">
           {NAV.map((n) => (
             <Link
               key={n.to}
@@ -110,11 +110,29 @@ export function SiteNav() {
                 </button>
 
                 {showUserDropdown && (
-                  <div className="absolute right-0 mt-2 w-48 bg-[#0F172A] border border-sky-500/30 rounded-xl shadow-2xl p-2 z-50 text-slate-200">
+                  <div className="absolute right-0 mt-2 w-56 overflow-hidden bg-[#0F172A] border border-sky-500/30 rounded-xl shadow-2xl p-2 z-[1003] text-slate-200">
                     <div className="px-3 py-2 border-b border-slate-800 mb-1">
                       <p className="text-xs font-bold text-white truncate">{user.full_name}</p>
                       <p className="text-[10px] text-slate-400 truncate">{user.email}</p>
                     </div>
+                    {user.role !== "customer" && (
+                      <Link
+                        to="/admin"
+                        onClick={() => setShowUserDropdown(false)}
+                        className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold text-sky-300 hover:bg-slate-800"
+                      >
+                        <LayoutDashboard className="w-3.5 h-3.5" /> Dashboard
+                      </Link>
+                    )}
+                    {user.role === "customer" && (
+                      <Link
+                        to="/account/orders"
+                        onClick={() => setShowUserDropdown(false)}
+                        className="block rounded-lg px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800"
+                      >
+                        My Orders
+                      </Link>
+                    )}
                     <button
                       type="button"
                       onClick={() => {
@@ -135,7 +153,7 @@ export function SiteNav() {
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-sky-500/10 hover:bg-sky-500/25 border border-sky-500/30 text-sky-300 hover:text-white transition text-xs font-semibold"
               >
                 <User className="w-3.5 h-3.5 text-sky-400" />
-                <span className="hidden sm:inline">B2B Portal</span> Login
+                Login
               </button>
             )}
           </div>
@@ -159,7 +177,7 @@ export function SiteNav() {
           <button
             type="button"
             onClick={() => setOpen((o) => !o)}
-            className="relative rounded-full p-2 text-frost-white transition-all md:hidden"
+            className="relative rounded-full p-2 text-frost-white transition-all xl:hidden"
             aria-label="Menu"
           >
             <motion.div
@@ -177,7 +195,7 @@ export function SiteNav() {
       <AnimatePresence>
         {open && (
           <motion.div
-            className="fixed inset-0 z-50 overflow-hidden md:hidden"
+            className="fixed inset-0 z-50 overflow-hidden xl:hidden"
             initial={{ 
               clipPath: "circle(0% at calc(100% - 32px) 32px)", 
               opacity: 0, 
@@ -246,7 +264,7 @@ export function SiteNav() {
 export function WhatsAppFloat({ productName }: { productName?: string }) {
   return (
     <a
-      href={`https://wa.me/919876543210?text=Hi%20BFF%20Team`}
+      href={buildWhatsAppLink(productName)}
       target="_blank"
       rel="noreferrer noopener"
       aria-label="Chat on WhatsApp"

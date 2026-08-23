@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ChevronDown, Wind, Leaf, Snowflake, Award } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
+import { buildWhatsAppLink } from '@/lib/whatsapp';
 
 const heroVideo = '/videos/hero_bg.mp4';
 
@@ -19,12 +20,12 @@ export default function Hero() {
   return (
     <section
       id="hero"
+      className="light-hero"
       style={{
         position: 'relative',
-        height: '100vh',
-        minHeight: '750px',
+        minHeight: '100svh',
         display: 'flex',
-        alignItems: 'center',          /* vertically centred */
+        alignItems: 'flex-start',
         overflow: 'hidden',
         background: 'linear-gradient(135deg, #081A0C 0%, #0D2314 50%, #0A1A0A 100%)',
       }}
@@ -51,7 +52,7 @@ export default function Hero() {
         pointerEvents: 'none',
       }} />
 
-      <div className="hero-content-container" style={{ position: 'relative', zIndex: 10, paddingTop: '180px', paddingLeft: 'max(20px, 4vw)', paddingRight: 'max(20px, 4vw)', maxWidth: '840px' }}>
+      <div className="hero-content-container" style={{ position: 'relative', zIndex: 10, paddingTop: 'clamp(130px, 18vh, 180px)', paddingBottom: 'clamp(100px, 14vh, 140px)', paddingLeft: 'max(20px, 4vw)', paddingRight: 'max(20px, 4vw)', maxWidth: '840px', width: '100%' }}>
         <div>
 
           {/* Label pill */}
@@ -119,7 +120,7 @@ export default function Hero() {
               Get a Quote
             </Link>
             <a
-              href="https://wa.me/919993377038?text=Hi%20BFF%2C%20I%27m%20interested%20in%20your%20products."
+              href={buildWhatsAppLink(undefined, undefined, "Hi BFF, I'm interested in your products.")}
               target="_blank" rel="noopener noreferrer"
               className="btn btn-whatsapp"
               style={{ padding: '16px 28px', fontSize: '15px', gap: '8px' }}
@@ -151,12 +152,6 @@ export default function Hero() {
         <ChevronDown size={18} color="rgba(255,255,255,0.7)" />
       </div>
 
-      {/* Bottom fade */}
-      <div style={{
-        position: 'absolute', bottom: 0, left: 0, right: 0, height: '140px',
-        background: 'linear-gradient(to bottom, transparent, rgba(5,15,8,0.55))',
-        pointerEvents: 'none',
-      }} />
     </section>
   );
 }

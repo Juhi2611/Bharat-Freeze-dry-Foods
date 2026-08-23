@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "@/context/AuthContext";
 import {
   Search,
   Bell,
@@ -14,7 +15,6 @@ import {
   CheckCircle2,
   ArrowLeft,
 } from "lucide-react";
-import { COMPANY_SETTINGS } from "./adminData";
 import type { AdminTab } from "./AdminSidebar";
 
 interface AdminHeaderProps {
@@ -48,6 +48,7 @@ export function AdminHeader({
   goBack,
   canGoBack = true,
 }: AdminHeaderProps) {
+  const { user, logout } = useAuth();
   const [profileOpen, setProfileOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -184,17 +185,23 @@ export function AdminHeader({
             onClick={() => setProfileOpen(!profileOpen)}
             className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-1.5 pr-3 transition-colors hover:border-white/20 hover:bg-white/10"
           >
-            <img
-              src={COMPANY_SETTINGS.adminProfile.avatar}
-              alt={COMPANY_SETTINGS.adminProfile.name}
-              className="h-8 w-8 rounded-lg object-cover border border-ice-blue/40"
-            />
+            {user?.avatar_url ? (
+              <img
+                src={user.avatar_url}
+                alt={user.full_name}
+                className="h-8 w-8 rounded-lg object-cover border border-ice-blue/40"
+              />
+            ) : (
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-ice-blue/40 bg-ice-blue/10 text-xs font-bold text-ice-blue">
+                {user?.full_name?.charAt(0) || "A"}
+              </div>
+            )}
             <div className="hidden sm:block text-left">
               <p className="text-xs font-bold text-frost-white leading-tight">
-                {COMPANY_SETTINGS.adminProfile.name}
+                {user?.full_name}
               </p>
               <p className="text-[0.6rem] text-steel-silver uppercase tracking-wider">
-                {COMPANY_SETTINGS.adminProfile.role}
+                {user?.role}
               </p>
             </div>
             <ChevronDown className="h-4 w-4 text-steel-silver" />
@@ -209,8 +216,8 @@ export function AdminHeader({
                 className="absolute right-0 mt-3 w-56 rounded-2xl border border-white/10 bg-deep-navy/95 p-2 shadow-2xl backdrop-blur-2xl"
               >
                 <div className="px-3 py-2 border-b border-white/10">
-                  <p className="text-xs font-bold text-frost-white">{COMPANY_SETTINGS.adminProfile.name}</p>
-                  <p className="text-[0.65rem] text-steel-silver">{COMPANY_SETTINGS.adminProfile.email}</p>
+                  <p className="text-xs font-bold text-frost-white">{user?.full_name}</p>
+                  <p className="text-[0.65rem] text-steel-silver">{user?.email}</p>
                 </div>
                 <div className="py-1">
                   <button
@@ -234,7 +241,7 @@ export function AdminHeader({
                 </div>
                 <div className="pt-1 border-t border-white/10">
                   <button
-                    onClick={() => alert("Signed out")}
+                    onClick={() => logout("/admin/login")}
                     className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs text-red-400 hover:bg-red-500/10"
                   >
                     <LogOut className="h-4 w-4" /> Sign out

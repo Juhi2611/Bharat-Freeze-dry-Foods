@@ -30,10 +30,12 @@ export function ThemeToggle() {
         aria-label="Switch between Light and Dark theme"
         style={{
           position: "fixed",
-          top: isMobile ? "auto" : "14px",
+          /* Keep clear of top-right account menu / cart so the pill never overlaps the user dropdown */
+          top: isMobile ? "auto" : "88px",
           bottom: isMobile ? "92px" : "auto",
-          right: "20px",
-          zIndex: 9999,
+          left: isMobile ? "auto" : "20px",
+          right: isMobile ? "20px" : "auto",
+          zIndex: 900,
           display: "flex",
           alignItems: "center",
           background: isDark

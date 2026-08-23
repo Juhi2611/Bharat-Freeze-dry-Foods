@@ -1,11 +1,12 @@
 import { useState } from 'react';
+import { buildWhatsAppLink } from '@/lib/whatsapp';
 
 export default function WhatsAppButtonLight() {
   const [hovered, setHovered] = useState(false);
 
   return (
     <a
-      href="https://wa.me/919993377038?text=Hi%20Bharat%20Freeze%20Fried%20Foods%2C%20I%27m%20interested%20in%20your%20products.%20Please%20contact%20me."
+      href={buildWhatsAppLink()}
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Contact us on WhatsApp"

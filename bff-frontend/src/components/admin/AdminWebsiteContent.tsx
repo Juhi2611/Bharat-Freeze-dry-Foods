@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import {
@@ -12,12 +12,27 @@ import {
   Globe2,
 } from "lucide-react";
 import { WEBSITE_SECTIONS, type WebsiteSectionItem } from "./adminData";
+import { api } from "@/services/api";
 
 export function AdminWebsiteContent() {
   const [sections, setSections] = useState<WebsiteSectionItem[]>(WEBSITE_SECTIONS);
   const [editingSec, setEditingSec] = useState<WebsiteSectionItem | null>(null);
   const [titleInput, setTitleInput] = useState("");
   const [subtitleInput, setSubtitleInput] = useState("");
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    void api.getWebsiteSections().then((records) => {
+      setSections(records.map((section) => ({
+        id: String(section.id),
+        title: String(section.title ?? ""),
+        subtitle: String(section.subtitle ?? ""),
+        routeUrl: String(section.route_url ?? ""),
+        lastUpdated: String(section.last_updated ?? "").split("T")[0],
+        status: section.status === "Draft" ? "Draft" : "Active",
+      })));
+    }).catch((error) => setLoadError(error instanceof Error ? error.message : "Unable to load website content."));
+  }, []);
 
   const handleEditOpen = (sec: WebsiteSectionItem) => {
     setEditingSec(sec);
@@ -27,22 +42,11 @@ export function AdminWebsiteContent() {
 
   const handleSaveSec = () => {
     if (!editingSec) return;
-    setSections((prev) =>
-      prev.map((s) =>
-        s.id === editingSec.id
-          ? {
-              ...s,
-              title: titleInput,
-              subtitle: subtitleInput,
-              lastUpdated: new Date().toISOString().split("T")[0],
-            }
-          : s
-      )
-    );
-    toast.success(`${editingSec.title} Updated!`, {
-      description: "Changes published to live frontend.",
-    });
-    setEditingSec(null);
+    void api.updateWebsiteSection(editingSec.id, { title: titleInput, subtitle: subtitleInput }).then(() => {
+      setSections((prev) => prev.map((s) => s.id === editingSec.id ? { ...s, title: titleInput, subtitle: subtitleInput, lastUpdated: new Date().toISOString().split("T")[0] } : s));
+      toast.success(`${editingSec.title} Updated!`, { description: "Changes published to live frontend." });
+      setEditingSec(null);
+    }).catch((error) => setLoadError(error instanceof Error ? error.message : "Unable to save website content."));
   };
 
   return (
@@ -54,6 +58,8 @@ export function AdminWebsiteContent() {
           Update copy, hero text, and section layouts across the public website
         </p>
       </div>
+
+      {loadError && <div role="alert" className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-300">{loadError}</div>}
 
       {/* SECTION CARDS GRID */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">

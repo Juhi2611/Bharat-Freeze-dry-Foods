@@ -6,6 +6,7 @@ import {
   HeadContent,
   Scripts,
   Link,
+  useLocation,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 
@@ -25,6 +26,7 @@ import { CartProvider } from "../context/CartContext";
 import { AuthModal } from "@/components/AuthModal";
 import { CartDrawer } from "@/components/CartDrawer";
 import { CheckoutModal } from "@/components/CheckoutModal";
+import { PublicContactProvider } from "@/lib/public-contact";
 
 // Light theme chrome imports
 import NavbarLight from "@/components/light/NavbarLight";
@@ -141,40 +143,51 @@ function RootShell({ children }: { children: ReactNode }) {
 }
 
 import { Toaster } from "@/components/ui/sonner";
-import { useLocation } from "@tanstack/react-router";
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  return (
+    <RootProviders queryClient={queryClient}>
+      <RouteContent />
+    </RootProviders>
+  );
+}
+
+function RouteContent() {
   const location = useLocation();
-  const isAdmin = location.pathname.startsWith("/admin");
+  return location.pathname.startsWith("/admin") ? <Outlet /> : <ThemedAppWithProvider />;
+}
 
-  if (isAdmin) {
-    return (
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <CartProvider>
-            <main className="min-h-screen bg-background text-frost-white selection:bg-ice-blue selection:text-deep-navy">
-              <Outlet />
-            </main>
-            <Toaster position="top-right" richColors />
-          </CartProvider>
-        </AuthProvider>
-      </QueryClientProvider>
-    );
-  }
+function ThemedAppWithProvider() {
+  return (
+    <ThemeProvider>
+      <ThemedApp />
+    </ThemeProvider>
+  );
+}
 
+function RootProviders({ queryClient, children }: {
+  queryClient: QueryClient;
+  children: ReactNode;
+}) {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <CartProvider>
-          <ThemeProvider>
-            <ThemedApp />
-            <AuthModal />
-            <CartDrawer />
-            <CheckoutModal />
-            <Toaster position="top-right" richColors />
-          </ThemeProvider>
-        </CartProvider>
+        <PublicContactProvider>
+          <CartProvider>
+          <main
+            data-tsd-source="/src/routes/__root.tsx:root"
+            className="min-h-screen bg-background text-frost-white selection:bg-ice-blue selection:text-deep-navy"
+          >
+            {children}
+          </main>
+          <AuthModal />
+          <CartDrawer />
+          <CheckoutModal />
+          <Toaster position="top-right" richColors style={{ zIndex: 11000 }} />
+          </CartProvider>
+        </PublicContactProvider>
       </AuthProvider>
     </QueryClientProvider>
   );
@@ -203,9 +216,7 @@ function ThemedApp() {
         </>
       )}
 
-      <main suppressHydrationWarning style={isLight ? { paddingTop: 0 } : undefined}>
-        <Outlet />
-      </main>
+      <Outlet />
 
       {isLight ? (
         <>

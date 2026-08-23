@@ -1,5 +1,6 @@
 import uuid
 from django.db import models
+from django.utils.text import slugify
 
 class Category(models.Model):
     class Availability(models.TextChoices):
@@ -11,6 +12,7 @@ class Category(models.Model):
     name = models.CharField(max_length=100, unique=True)
     slug = models.SlugField(max_length=100, unique=True, db_index=True)
     description = models.TextField(blank=True)
+    cover_image = models.URLField(blank=True, default='')
     availability = models.CharField(max_length=20, choices=Availability.choices, default=Availability.AVAILABLE)
     display_order = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -18,6 +20,16 @@ class Category(models.Model):
     class Meta:
         verbose_name_plural = 'Categories'
         ordering = ['display_order', 'name']
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base_slug = slugify(self.name) or 'category'
+            self.slug = base_slug
+            suffix = 2
+            while Category.objects.filter(slug=self.slug).exclude(pk=self.pk).exists():
+                self.slug = f'{base_slug}-{suffix}'
+                suffix += 1
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name
@@ -46,6 +58,16 @@ class Product(models.Model):
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PUBLISHED, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base_slug = slugify(self.name) or slugify(self.sku)
+            self.slug = base_slug
+            suffix = 2
+            while Product.objects.filter(slug=self.slug).exclude(pk=self.pk).exists():
+                self.slug = f'{base_slug}-{suffix}'
+                suffix += 1
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name

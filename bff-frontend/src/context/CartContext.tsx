@@ -1,7 +1,15 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+
+/** Catalog product UUID — the only valid cart/checkout product identifier. */
+const CATALOG_UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function isCatalogProductId(value: unknown): value is string {
+  return typeof value === 'string' && CATALOG_UUID_RE.test(value);
+}
 
 export interface CartItem {
-  id: string;
+  id: string; // catalog product UUID (sent as product_id at checkout)
   sku: string;
   name: string;
   price_inr: number;
@@ -10,6 +18,8 @@ export interface CartItem {
   quantity: number;
   pack_size?: string;
 }
+
+export type CheckoutMode = 'pay' | 'quote';
 
 interface CartContextType {
   items: CartItem[];
@@ -23,30 +33,43 @@ interface CartContextType {
   setIsAuthOpen: (open: boolean) => void;
   isCheckoutOpen: boolean;
   setIsCheckoutOpen: (open: boolean) => void;
+  checkoutMode: CheckoutMode;
+  openCheckout: (mode: CheckoutMode) => void;
   totalItems: number;
   totalPrice: number;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [items, setItems] = useState<CartItem[]>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('bff_cart');
-      if (saved) {
-        try {
-          return JSON.parse(saved);
-        } catch (e) {
-          console.error('Error parsing cart:', e);
-        }
-      }
-    }
+function loadInitialCart(): CartItem[] {
+  if (typeof window === 'undefined') return [];
+  const saved = localStorage.getItem('bff_cart');
+  if (!saved) return [];
+  try {
+    const parsed = JSON.parse(saved);
+    if (!Array.isArray(parsed)) return [];
+    // Drop legacy rows that used SKU/name as id (would 400 at checkout).
+    return parsed.filter(
+      (item) => item && isCatalogProductId(item.id) && typeof item.name === 'string',
+    ) as CartItem[];
+  } catch (e) {
+    console.error('Error parsing cart:', e);
     return [];
-  });
+  }
+}
+
+export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [items, setItems] = useState<CartItem[]>(loadInitialCart);
 
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [checkoutMode, setCheckoutMode] = useState<CheckoutMode>('pay');
+
+  const openCheckout = useCallback((mode: CheckoutMode) => {
+    setCheckoutMode(mode);
+    setIsCheckoutOpen(true);
+  }, []);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -55,17 +78,27 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [items]);
 
   const addToCart = (product: any, quantity = 1, pack_size = 'Retail Pouch') => {
+    // Never fall back to SKU/name — checkout product_id must be the catalog UUID.
+    if (!isCatalogProductId(product?.id)) {
+      console.error('Cannot add to cart: expected catalog product UUID on product.id', product);
+      return;
+    }
+    const productId = product.id as string;
+
     setItems((prev) => {
-      const existingIndex = prev.findIndex((item) => item.id === (product.id || product.sku));
+      const existingIndex = prev.findIndex((item) => item.id === productId);
       if (existingIndex > -1) {
         const updated = [...prev];
-        updated[existingIndex].quantity += quantity;
+        updated[existingIndex] = {
+          ...updated[existingIndex],
+          quantity: updated[existingIndex].quantity + quantity,
+        };
         return updated;
       }
 
       const newItem: CartItem = {
-        id: product.id || product.sku || String(Date.now()),
-        sku: product.sku || 'SKU-001',
+        id: productId,
+        sku: product.sku || '',
         name: product.name,
         price_inr: Number(product.price_inr || product.price || 250),
         pack_image: product.pack_image || product.image || '/assets/products/default.png',
@@ -117,6 +150,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsAuthOpen,
         isCheckoutOpen,
         setIsCheckoutOpen,
+        checkoutMode,
+        openCheckout,
         totalItems,
         totalPrice,
       }}

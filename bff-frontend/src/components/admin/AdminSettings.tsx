@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
+import { useAuth } from "@/context/AuthContext";
 import {
   Settings,
   Building2,
@@ -15,10 +16,37 @@ import {
   MessageCircle,
 } from "lucide-react";
 import { COMPANY_SETTINGS } from "./adminData";
+import { api } from "@/services/api";
 
 export function AdminSettings() {
-  const [settings, setSettings] = useState(COMPANY_SETTINGS);
+  const { user } = useAuth();
+  const [settings, setSettings] = useState(() => ({
+    ...COMPANY_SETTINGS,
+    adminProfile: {
+      name: user?.full_name ?? "",
+      role: user?.role ?? "",
+      email: user?.email ?? "",
+      avatar: user?.avatar_url ?? "",
+    },
+  }));
   const [activeSubTab, setActiveSubTab] = useState<"company" | "contact" | "social" | "profile" | "theme">("company");
+
+  useEffect(() => {
+    void api.getSiteSettings().then((siteSettings) => {
+      setSettings((prev) => ({
+        ...prev,
+        companyName: String(siteSettings.company_name ?? prev.companyName),
+        tagline: String(siteSettings.tagline ?? prev.tagline),
+        address: String(siteSettings.company_address ?? prev.address),
+        email: String(siteSettings.support_email ?? prev.email),
+        phone: String(siteSettings.support_phone ?? prev.phone),
+        whatsApp: String(siteSettings.whatsapp_number ?? prev.whatsApp),
+        socialLinks: (siteSettings.social_links as typeof prev.socialLinks) ?? prev.socialLinks,
+      }));
+    }).catch(() => {
+      // Keep the editable defaults when the optional CMS settings record is unavailable.
+    });
+  }, []);
 
   const handleCompanyChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -26,8 +54,18 @@ export function AdminSettings() {
   };
 
   const handleSaveSettings = () => {
-    toast.success("Operations Settings Saved!", {
-      description: "Company parameters updated across export system.",
+    void api.updateSiteSettings({
+      company_name: settings.companyName,
+      tagline: settings.tagline,
+      company_address: settings.address,
+      support_email: settings.email,
+      support_phone: settings.phone,
+      whatsapp_number: settings.whatsApp,
+      social_links: settings.socialLinks,
+    }).then(() => {
+      toast.success("Operations Settings Saved!", { description: "Company parameters updated across export system." });
+    }).catch((error) => {
+      toast.error(error instanceof Error ? error.message : "Unable to save operations settings.");
     });
   };
 

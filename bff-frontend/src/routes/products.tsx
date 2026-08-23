@@ -1,7 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import { ProductCard } from "@/components/ProductCard";
-import { CATEGORIES, PRODUCTS, type Category } from "@/lib/products";
+import type { Category } from "@/lib/products";
+import { useCatalogData } from "@/hooks/useCatalogData";
 import { FrostParticles } from "@/components/FrostParticles";
 import { useTheme } from "@/lib/theme-context";
 import ProductsLight from "@/components/light/Products.jsx";
@@ -33,6 +34,7 @@ export const Route = createFileRoute("/products")({
 
 function ProductsPage() {
   const { theme } = useTheme();
+  const catalog = useCatalogData();
 
   if (theme === "light") {
     return (
@@ -55,7 +57,7 @@ function ProductsPage() {
             </p>
           </div>
         </section>
-        <ProductsLight />
+        <ProductsLight products={catalog.products} categories={catalog.categories} isLoading={catalog.isLoading} error={catalog.error} />
       </main>
     );
   }
@@ -69,8 +71,9 @@ function ProductsPage() {
       ? category.replace(/\+/g, " ")
       : undefined;
 
+  const categories = catalog.categories.map((item) => item.name);
   const activeCategory: Category | "All" =
-    rawCategory && CATEGORIES.includes(rawCategory as Category)
+    rawCategory && categories.includes(rawCategory)
       ? (rawCategory as Category)
       : "All";
 
@@ -84,8 +87,8 @@ function ProductsPage() {
 
   const filtered =
     activeCategory === "All"
-      ? PRODUCTS
-      : PRODUCTS.filter((p) => p.category === activeCategory);
+      ? catalog.products
+      : catalog.products.filter((p) => p.category === activeCategory);
 
   return (
     <div className="relative">
@@ -107,7 +110,7 @@ function ProductsPage() {
       {/* Filters */}
       <section className="sticky top-[68px] z-30 border-y border-white/5 bg-nav-glass py-4">
         <div className="mx-auto flex max-w-7xl gap-2 overflow-x-auto px-6 no-scrollbar">
-          {(["All", ...CATEGORIES] as const).map((c) => {
+          {(["All", ...categories] as const).map((c) => {
             const active = activeCategory === c;
             return (
               <button
@@ -138,7 +141,9 @@ function ProductsPage() {
               transition={{ duration: 0.4 }}
               className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
             >
-              {filtered.map((p) => (
+              {catalog.isLoading && <p className="col-span-full py-16 text-center text-steel-silver">Loading products...</p>}
+              {!catalog.isLoading && catalog.error && <p className="col-span-full py-16 text-center text-red-300">{catalog.error}</p>}
+              {!catalog.isLoading && !catalog.error && filtered.map((p) => (
                 <motion.div
                   key={p.id}
                   layout

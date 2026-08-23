@@ -5,7 +5,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter
 from .models import Subscriber
 from .serializers import SubscriberSerializer
-from apps.users.permissions import IsAdminRole
+from apps.users.permissions import IsContentStaff
 
 class SubscriberViewSet(viewsets.ModelViewSet):
     queryset = Subscriber.objects.all()
@@ -17,7 +17,7 @@ class SubscriberViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ['create', 'unsubscribe']:
             return [permissions.AllowAny()]
-        return [IsAdminRole()]
+        return [IsContentStaff()]
 
     @action(detail=False, methods=['post'], permission_classes=[permissions.AllowAny()])
     def unsubscribe(self, request):

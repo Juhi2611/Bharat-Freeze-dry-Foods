@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Link, useRouterState } from '@tanstack/react-router';
-import { Menu, X, Leaf } from 'lucide-react';
+import { Menu, X, Leaf, ShoppingBag, User, LogOut, LayoutDashboard } from 'lucide-react';
+import { useCart } from '@/context/CartContext';
+import { useAuth } from '@/context/AuthContext';
+import { buildWhatsAppLink } from '@/lib/whatsapp';
 
 const navLinks = [
   { label: 'Home',          to: '/' },
@@ -15,7 +18,10 @@ const navLinks = [
 export default function NavbarLight() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const { totalItems, setIsCartOpen, setIsAuthOpen } = useCart();
+  const { user, isAuthenticated, logout } = useAuth();
 
   const isHome = pathname === '/';
 
@@ -72,7 +78,7 @@ export default function NavbarLight() {
         </Link>
 
         {/* Desktop Nav */}
-        <div className="desktop-nav-light" style={{ display: 'flex', alignItems: 'center', gap: '2px', paddingRight: '144px' }}>
+        <div className="desktop-nav-light" style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
           {navLinks.map(link => {
             const active = pathname === link.to;
             return (
@@ -113,25 +119,86 @@ export default function NavbarLight() {
           })}
         </div>
 
-        {/* Mobile Hamburger */}
-        <button
-          className="mobile-menu-btn-light"
-          onClick={() => setMenuOpen(!menuOpen)}
-          aria-label="Toggle menu"
-          style={{
-            width: 44, height: 44, display: 'none',
-            alignItems: 'center', justifyContent: 'center',
-            borderRadius: 12,
-            background: glassed ? 'var(--light-grey)' : 'rgba(255,255,255,0.15)',
-            color: glassed ? 'var(--text-dark)' : 'white',
-            border: 'none', cursor: 'pointer',
-            transition: 'all 0.2s ease',
-            position: 'relative',
-            zIndex: 1002,
-          }}
-        >
-          {menuOpen ? <X size={22} /> : <Menu size={22} />}
-        </button>
+        {/* Shared action controls: theme changes colors, not behavior */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ position: 'relative' }}>
+            {isAuthenticated && user ? (
+              <button
+                type="button"
+                onClick={() => setShowUserDropdown(!showUserDropdown)}
+                aria-label="Open account menu"
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 11px',
+                  borderRadius: '9999px', background: glassed ? 'rgba(45,122,58,0.10)' : 'rgba(0,0,0,0.18)',
+                  border: glassed ? '1px solid rgba(45,122,58,0.25)' : '1px solid rgba(255,255,255,0.35)',
+                  color: glassed ? 'var(--green-deep)' : 'white', fontSize: '12px', fontWeight: 700,
+                }}
+              >
+                <User size={15} />
+                <span style={{ maxWidth: 84, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {user.full_name?.split(' ')[0] || user.email}
+                </span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setIsAuthOpen(true)}
+                aria-label="Open B2B portal login"
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 11px',
+                  borderRadius: '9999px', background: glassed ? 'rgba(45,122,58,0.10)' : 'rgba(0,0,0,0.18)',
+                  border: glassed ? '1px solid rgba(45,122,58,0.25)' : '1px solid rgba(255,255,255,0.35)',
+                  color: glassed ? 'var(--green-deep)' : 'white', fontSize: '12px', fontWeight: 700,
+                }}
+              >
+                <User size={15} />
+                <span className="portal-login-label">Login</span>
+              </button>
+            )}
+
+            {showUserDropdown && user && (
+              <div style={{ position: 'absolute', right: 0, top: 'calc(100% + 8px)', width: 220, padding: 8, borderRadius: 12, background: 'var(--white)', border: '1px solid var(--border-light)', boxShadow: 'var(--shadow-lg)', zIndex: 1003, overflow: 'hidden' }}>
+                <div style={{ padding: '8px 10px', borderBottom: '1px solid var(--border-light)' }}>
+                  <p style={{ margin: 0, color: 'var(--text-dark)', fontSize: 12, fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.full_name}</p>
+                  <p style={{ margin: '3px 0 0', color: 'var(--text-muted)', fontSize: 10, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</p>
+                </div>
+                {user.role !== 'customer' && (
+                  <Link to="/admin" onClick={() => setShowUserDropdown(false)} style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '9px 10px', color: 'var(--green-deep)', fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>
+                    <LayoutDashboard size={14} /> Dashboard
+                  </Link>
+                )}
+                {user.role === 'customer' && (
+                  <Link to="/account/orders" onClick={() => setShowUserDropdown(false)} style={{ display: 'block', width: '100%', padding: '9px 10px', color: 'var(--text-dark)', fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>
+                    My Orders
+                  </Link>
+                )}
+                <button type="button" onClick={() => { logout(); setShowUserDropdown(false); }} style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '9px 10px', color: 'var(--red)', fontSize: 12, fontWeight: 700, background: 'transparent', border: 'none', cursor: 'pointer' }}>
+                  <LogOut size={14} /> Sign Out
+                </button>
+              </div>
+            )}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setIsCartOpen(true)}
+            aria-label="View sample cart and request quote"
+            title="View Sample Cart & Request Quote"
+            style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', width: 38, height: 38, borderRadius: '9999px', background: glassed ? 'var(--light-grey)' : 'rgba(0,0,0,0.18)', border: glassed ? '1px solid var(--border-light)' : '1px solid rgba(255,255,255,0.35)', color: glassed ? 'var(--green-deep)' : 'white' }}
+          >
+            <ShoppingBag size={18} />
+            {totalItems > 0 && <span style={{ position: 'absolute', top: -4, right: -4, display: 'flex', alignItems: 'center', justifyContent: 'center', width: 18, height: 18, borderRadius: '50%', background: 'var(--green)', color: 'white', fontSize: 10, fontWeight: 800 }}>{totalItems}</span>}
+          </button>
+
+          <button
+            className="mobile-menu-btn-light"
+            onClick={() => setMenuOpen(!menuOpen)}
+            aria-label="Toggle menu"
+            style={{ width: 38, height: 38, display: 'none', alignItems: 'center', justifyContent: 'center', borderRadius: 12, background: glassed ? 'var(--light-grey)' : 'rgba(0,0,0,0.18)', color: glassed ? 'var(--text-dark)' : 'white', border: glassed ? '1px solid var(--border-light)' : '1px solid rgba(255,255,255,0.35)', cursor: 'pointer', transition: 'all 0.2s ease', position: 'relative', zIndex: 1002 }}
+          >
+            {menuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Menu */}
@@ -168,7 +235,7 @@ export default function NavbarLight() {
           </Link>
         ))}
         <a
-          href="https://wa.me/919993377038?text=Hi%20BFF!"
+          href={buildWhatsAppLink()}
           target="_blank" rel="noopener noreferrer"
           className="btn btn-whatsapp"
           style={{ marginTop: '20px', width: '100%', justifyContent: 'center', padding: '14px' }}
@@ -178,7 +245,8 @@ export default function NavbarLight() {
       </div>
 
       <style>{`
-        @media (max-width: 1000px) { .desktop-nav-light { display: none !important; } .mobile-menu-btn-light { display: flex !important; } }
+        @media (max-width: 1199px) { .desktop-nav-light { display: none !important; } .mobile-menu-btn-light { display: flex !important; } }
+        @media (max-width: 420px) { .portal-login-label { display: none; } }
       `}</style>
     </nav>
   );

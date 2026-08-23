@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
@@ -12,20 +12,56 @@ import {
   Package,
   Sparkles,
 } from "lucide-react";
-import { DUMMY_PRODUCTS, type AdminProductItem } from "./adminData";
-import { CATEGORIES } from "@/lib/products";
+import { type AdminProductItem } from "./adminData";
 import type { AdminTab } from "./AdminSidebar";
+import { api, type ApiProduct } from "@/services/api";
 
 interface AdminProductsProps {
   setActiveTab: (tab: AdminTab) => void;
 }
 
 export function AdminProducts({ setActiveTab }: AdminProductsProps) {
-  const [products, setProducts] = useState<AdminProductItem[]>(DUMMY_PRODUCTS);
+  const [products, setProducts] = useState<AdminProductItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [selectedStatus, setSelectedStatus] = useState<string>("All");
   const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isActive = true;
+
+    const loadProducts = async () => {
+      try {
+        const response = await api.getProducts();
+        const liveProducts = Array.isArray(response) ? response : response.results;
+        if (isActive) {
+          setProducts(liveProducts.map((product: ApiProduct) => ({
+            id: product.id,
+            name: product.name,
+            category: product.category_name || "Uncategorized",
+            packImage: product.pack_image,
+            price: `₹${product.price_inr}`,
+            status: product.status as AdminProductItem["status"],
+            stock: 0,
+            exportReady: product.export_ready,
+          })));
+          setLoadError(null);
+        }
+      } catch (error) {
+        if (isActive) {
+          setProducts([]);
+          setLoadError(error instanceof Error ? error.message : "Unable to load products.");
+        }
+      } finally {
+        if (isActive) setIsLoading(false);
+      }
+    };
+
+    void loadProducts();
+    return () => { isActive = false; };
+  }, []);
 
   const filtered = products.filter((p) => {
     const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase());
@@ -33,10 +69,15 @@ export function AdminProducts({ setActiveTab }: AdminProductsProps) {
     const matchesStatus = selectedStatus === "All" || p.status === selectedStatus;
     return matchesSearch && matchesCategory && matchesStatus;
   });
+  const categories = Array.from(new Set(products.map((product) => product.category).filter(Boolean)));
 
   const handleDelete = (id: string) => {
-    setProducts((prev) => prev.filter((p) => p.id !== id));
-    setDeleteId(null);
+    void api.deleteProduct(id).then(() => {
+      setProducts((prev) => prev.filter((p) => p.id !== id));
+      setDeleteId(null);
+    }).catch((error) => {
+      setLoadError(error instanceof Error ? error.message : "Unable to delete product.");
+    });
   };
 
   return (
@@ -46,7 +87,7 @@ export function AdminProducts({ setActiveTab }: AdminProductsProps) {
         <div>
           <h2 className="text-2xl font-bold text-frost-white">Product Catalog Management</h2>
           <p className="text-xs text-steel-silver">
-            {filtered.length} products found in database
+            {isLoading ? "Loading products..." : `${filtered.length} products found in database`}
           </p>
         </div>
 
@@ -57,6 +98,12 @@ export function AdminProducts({ setActiveTab }: AdminProductsProps) {
           <Plus className="h-4 w-4" /> Add New Product
         </button>
       </div>
+
+      {loadError && (
+        <div role="alert" className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-300">
+          {loadError}
+        </div>
+      )}
 
       {/* FILTER BAR */}
       <div className="flex flex-col sm:flex-row gap-3 rounded-2xl border border-white/10 bg-card/60 p-4 backdrop-blur-xl">
@@ -78,7 +125,7 @@ export function AdminProducts({ setActiveTab }: AdminProductsProps) {
             className="rounded-xl border border-white/10 bg-deep-navy px-3 py-2.5 text-xs text-frost-white focus:border-ice-blue focus:outline-none"
           >
             <option value="All">All Categories</option>
-            {CATEGORIES.map((c) => (
+            {categories.map((c) => (
               <option key={c} value={c}>
                 {c}
               </option>
