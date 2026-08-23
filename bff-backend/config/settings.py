@@ -22,18 +22,27 @@ from config.security import (  # noqa: E402
     validate_production_settings,
 )
 
-# Fail closed: DEBUG defaults to False unless explicitly enabled.
+# Fail closed: DEBUG defaults to False unless explicitly enabled via environment variable.
 DEBUG = env.bool('DEBUG', default=False)
 
-# SECRET_KEY: insecure default only allowed while DEBUG=True (local/dev).
-# Production (DEBUG=False) must set SECRET_KEY explicitly — see validate_production_settings.
-SECRET_KEY = env('SECRET_KEY', default=INSECURE_DEFAULT_SECRET_KEY)
+# SECRET_KEY: read from environment; raise a clear error if missing in production (DEBUG=False).
+SECRET_KEY = env('SECRET_KEY', default='')
+if not SECRET_KEY:
+    if DEBUG:
+        SECRET_KEY = INSECURE_DEFAULT_SECRET_KEY
+    else:
+        from django.core.exceptions import ImproperlyConfigured
+        raise ImproperlyConfigured(
+            'SECRET_KEY environment variable is missing! '
+            'You must set SECRET_KEY in production when DEBUG=False.'
+        )
 
-# Localhost-only default for local/dev. Production must set ALLOWED_HOSTS explicitly.
-ALLOWED_HOSTS = env.list(
-    'ALLOWED_HOSTS',
-    default=['localhost', '127.0.0.1'] if DEBUG else [],
-)
+# ALLOWED_HOSTS: parsed from environment variable (comma-separated), e.g. "bharat-freeze-dry-foods-production.up.railway.app,localhost"
+raw_allowed_hosts = env('ALLOWED_HOSTS', default='')
+if raw_allowed_hosts:
+    ALLOWED_HOSTS = [h.strip() for h in raw_allowed_hosts.split(',') if h.strip()]
+else:
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1'] if DEBUG else []
 
 validate_production_settings(
     debug=DEBUG,
@@ -103,13 +112,33 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-# Database Configuration (MySQL via PyMySQL — set DATABASE_URL in .env)
-DATABASES = {
-    'default': env.db(
-        'DATABASE_URL',
-        default='mysql://root:Gargi%402275@127.0.0.1:3306/bff',
-    )
-}
+# Database Configuration — MySQL via env vars (MYSQLHOST, MYSQLPORT, MYSQLDATABASE, MYSQLUSER, MYSQLPASSWORD)
+# or DATABASE_URL, with local-dev fallbacks (localhost:3306) so app runs locally without env vars set.
+DB_HOST = os.environ.get('MYSQLHOST') or os.environ.get('MYSQL_HOST') or '127.0.0.1'
+DB_PORT = os.environ.get('MYSQLPORT') or os.environ.get('MYSQL_PORT') or '3306'
+DB_NAME = os.environ.get('MYSQLDATABASE') or os.environ.get('MYSQL_DATABASE') or 'bff'
+DB_USER = os.environ.get('MYSQLUSER') or os.environ.get('MYSQL_USER') or 'root'
+DB_PASSWORD = os.environ.get('MYSQLPASSWORD') or os.environ.get('MYSQL_PASSWORD') or 'Gargi@2275'
+
+if os.environ.get('DATABASE_URL'):
+    DATABASES = {
+        'default': env.db('DATABASE_URL')
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': DB_NAME,
+            'USER': DB_USER,
+            'PASSWORD': DB_PASSWORD,
+            'HOST': DB_HOST,
+            'PORT': DB_PORT,
+            'OPTIONS': {
+                'charset': 'utf8mb4',
+                'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+            },
+        }
+    }
 
 _db_engine = DATABASES['default'].get('ENGINE', '')
 if 'mysql' in _db_engine:
