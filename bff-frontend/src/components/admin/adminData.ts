@@ -30,6 +30,7 @@ export interface EnquiryItem {
 
 export interface AdminProductItem {
   id: string;
+  slug: string;
   name: string;
   category: string;
   packImage: string;

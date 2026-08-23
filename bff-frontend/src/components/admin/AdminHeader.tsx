@@ -31,6 +31,7 @@ const TAB_TITLES: Record<AdminTab, { title: string; subtitle: string }> = {
   products: { title: "Product Inventory", subtitle: "Manage export-grade freeze-dried products & SKU data." },
   "add-product": { title: "Add New Product", subtitle: "Create and publish a new product to the global catalog." },
   categories: { title: "Category Management", subtitle: "Organize human food lines & sub-brands." },
+  "pet-foods": { title: "Pet Foods", subtitle: "Manage pet food SKUs for the /pet-foods storefront page." },
   enquiries: { title: "B2B Export Enquiries", subtitle: "CRM lead management & international buyer requests." },
   leads: { title: "Export Leads Pipeline", subtitle: "Track container-load opportunities & white-label clients." },
   orders: { title: "Bulk Export Orders", subtitle: "Track container shipments, commercial invoices & payment terms." },

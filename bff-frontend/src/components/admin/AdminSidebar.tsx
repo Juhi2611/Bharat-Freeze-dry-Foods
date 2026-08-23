@@ -19,6 +19,7 @@ import {
   ChevronRight,
   X,
   Snowflake,
+  PawPrint,
 } from "lucide-react";
 
 export type AdminTab =
@@ -26,6 +27,7 @@ export type AdminTab =
   | "products"
   | "add-product"
   | "categories"
+  | "pet-foods"
   | "enquiries"
   | "leads"
   | "orders"
@@ -55,6 +57,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { id: "products", label: "Products", icon: Package, badgeKey: "products" },
   { id: "categories", label: "Categories", icon: Layers },
+  { id: "pet-foods", label: "Pet Foods", icon: PawPrint },
   {
     id: "enquiries",
     label: "B2B Enquiries",

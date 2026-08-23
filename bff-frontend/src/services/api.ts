@@ -563,12 +563,12 @@ export const api = {
     body: JSON.stringify(data),
   }),
 
-  updateProduct: (id: string, data: Partial<ApiProduct>) => request<ApiProduct>(`/products/${id}/`, {
+  updateProduct: (slug: string, data: Partial<ApiProduct>) => request<ApiProduct>(`/products/${slug}/`, {
     method: 'PATCH',
     body: JSON.stringify(data),
   }),
 
-  deleteProduct: (id: string) => request<void>(`/products/${id}/`, { method: 'DELETE' }),
+  deleteProduct: (slug: string) => request<void>(`/products/${slug}/`, { method: 'DELETE' }),
 
   getEnquiries: async (params = '') => unwrapList(await request<ApiList<ApiEnquiry>>(`/enquiries/${params}`)),
   updateEnquiry: (id: string, data: Partial<ApiEnquiry>) => request<ApiEnquiry>(`/enquiries/${id}/`, {

@@ -18,10 +18,13 @@ import { api, type ApiProduct } from "@/services/api";
 
 interface AdminProductsProps {
   setActiveTab: (tab: AdminTab) => void;
+  onEditProduct: (slug: string) => void;
+  onAddProduct: () => void;
 }
 
-export function AdminProducts({ setActiveTab }: AdminProductsProps) {
+export function AdminProducts({ setActiveTab, onEditProduct, onAddProduct }: AdminProductsProps) {
   const [products, setProducts] = useState<AdminProductItem[]>([]);
+  const [categoryOptions, setCategoryOptions] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -34,19 +37,25 @@ export function AdminProducts({ setActiveTab }: AdminProductsProps) {
 
     const loadProducts = async () => {
       try {
-        const response = await api.getProducts();
+        const [response, categories] = await Promise.all([
+          api.getProducts(),
+          api.getCategories(),
+        ]);
         const liveProducts = Array.isArray(response) ? response : response.results;
         if (isActive) {
           setProducts(liveProducts.map((product: ApiProduct) => ({
             id: product.id,
+            slug: product.slug,
             name: product.name,
             category: product.category_name || "Uncategorized",
             packImage: product.pack_image,
             price: `₹${product.price_inr}`,
             status: product.status as AdminProductItem["status"],
-            stock: 0,
+            stock: product.stock_quantity ?? 0,
             exportReady: product.export_ready,
           })));
+          const categoryNames = categories.map((c) => c.name);
+          setCategoryOptions(categoryNames);
           setLoadError(null);
         }
       } catch (error) {
@@ -69,11 +78,13 @@ export function AdminProducts({ setActiveTab }: AdminProductsProps) {
     const matchesStatus = selectedStatus === "All" || p.status === selectedStatus;
     return matchesSearch && matchesCategory && matchesStatus;
   });
-  const categories = Array.from(new Set(products.map((product) => product.category).filter(Boolean)));
+  const categories = categoryOptions.length > 0
+    ? categoryOptions
+    : Array.from(new Set(products.map((product) => product.category).filter(Boolean)));
 
-  const handleDelete = (id: string) => {
-    void api.deleteProduct(id).then(() => {
-      setProducts((prev) => prev.filter((p) => p.id !== id));
+  const handleDelete = (slug: string) => {
+    void api.deleteProduct(slug).then(() => {
+      setProducts((prev) => prev.filter((p) => p.slug !== slug));
       setDeleteId(null);
     }).catch((error) => {
       setLoadError(error instanceof Error ? error.message : "Unable to delete product.");
@@ -92,7 +103,7 @@ export function AdminProducts({ setActiveTab }: AdminProductsProps) {
         </div>
 
         <button
-          onClick={() => setActiveTab("add-product")}
+          onClick={onAddProduct}
           className="flex items-center gap-2 rounded-full bg-gradient-primary-cta px-6 py-3 text-xs font-bold uppercase tracking-widest text-white shadow-frost hover:scale-[1.02] transition-transform"
         >
           <Plus className="h-4 w-4" /> Add New Product
@@ -130,7 +141,6 @@ export function AdminProducts({ setActiveTab }: AdminProductsProps) {
                 {c}
               </option>
             ))}
-            <option value="Pet Food">Pet Food</option>
           </select>
 
           <select
@@ -204,14 +214,14 @@ export function AdminProducts({ setActiveTab }: AdminProductsProps) {
                 <td className="py-4 px-6 text-right">
                   <div className="flex items-center justify-end gap-2">
                     <button
-                      onClick={() => alert(`Editing SKU: ${p.name}`)}
+                      onClick={() => onEditProduct(p.slug)}
                       className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-steel-silver hover:border-ice-blue hover:text-ice-blue transition-colors"
                       title="Edit Product"
                     >
                       <Edit2 className="h-3.5 w-3.5" />
                     </button>
                     <button
-                      onClick={() => setDeleteId(p.id)}
+                      onClick={() => setDeleteId(p.slug)}
                       className="flex h-8 w-8 items-center justify-center rounded-lg border border-red-500/20 bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
                       title="Delete Product"
                     >
@@ -257,13 +267,13 @@ export function AdminProducts({ setActiveTab }: AdminProductsProps) {
               <span className="text-steel-silver font-mono">Stock: {p.stock}</span>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => alert(`Editing SKU: ${p.name}`)}
+                  onClick={() => onEditProduct(p.slug)}
                   className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-frost-white"
                 >
                   Edit
                 </button>
                 <button
-                  onClick={() => setDeleteId(p.id)}
+                  onClick={() => setDeleteId(p.slug)}
                   className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-1.5 text-xs text-red-400"
                 >
                   Delete

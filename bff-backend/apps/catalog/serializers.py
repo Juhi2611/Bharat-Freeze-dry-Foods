@@ -37,7 +37,8 @@ class ProductListSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'sku', 'name', 'slug', 'category', 'category_name', 'category_slug',
             'pack_image', 'ingredient_image', 'accent_color', 'price_inr',
-            'is_organic', 'white_label_available', 'export_ready', 'blurb', 'status'
+            'is_organic', 'white_label_available', 'export_ready', 'blurb', 'status',
+            'stock_quantity',
         ]
 
 class ProductDetailSerializer(serializers.ModelSerializer):

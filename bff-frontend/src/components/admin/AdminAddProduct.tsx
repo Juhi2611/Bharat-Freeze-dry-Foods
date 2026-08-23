@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   Package,
@@ -19,11 +19,16 @@ import { api } from "@/services/api";
 
 interface AdminAddProductProps {
   setActiveTab: (tab: AdminTab) => void;
+  editSlug?: string | null;
+  defaultCategoryId?: string | null;
+  onClearEdit?: () => void;
 }
 
-export function AdminAddProduct({ setActiveTab }: AdminAddProductProps) {
+export function AdminAddProduct({ setActiveTab, editSlug, defaultCategoryId, onClearEdit }: AdminAddProductProps) {
+  const isEditing = Boolean(editSlug);
   const { categories } = useCatalogData();
   const [loading, setLoading] = useState(false);
+  const [loadingProduct, setLoadingProduct] = useState(false);
   const [uploadingField, setUploadingField] = useState<"pack" | "ingredient" | null>(null);
   const packInputRef = useRef<HTMLInputElement>(null);
   const ingredientInputRef = useRef<HTMLInputElement>(null);
@@ -42,6 +47,40 @@ export function AdminAddProduct({ setActiveTab }: AdminAddProductProps) {
     isOrganic: false,
     status: "Published" as "Published" | "Draft",
   });
+
+  useEffect(() => {
+    if (!editSlug) return;
+    setLoadingProduct(true);
+    void api
+      .getProduct(editSlug)
+      .then((product) => {
+        setFormData({
+          name: product.name || "",
+          categoryId: product.category || "",
+          price: String(product.price_inr ?? ""),
+          blurb: product.blurb || "",
+          description: product.full_description || "",
+          packImage: product.pack_image || "",
+          ingredientImage: product.ingredient_image || "",
+          stock: String(product.stock_quantity ?? 0),
+          privateLabel: product.white_label_available ?? true,
+          exportReady: product.export_ready ?? true,
+          isOrganic: product.is_organic ?? false,
+          status: (product.status as "Published" | "Draft") || "Published",
+        });
+      })
+      .catch((error) => {
+        toast.error(error instanceof Error ? error.message : "Unable to load product.");
+        onClearEdit?.();
+        setActiveTab("products");
+      })
+      .finally(() => setLoadingProduct(false));
+  }, [editSlug, onClearEdit, setActiveTab]);
+
+  useEffect(() => {
+    if (editSlug || !defaultCategoryId) return;
+    setFormData((prev) => ({ ...prev, categoryId: defaultCategoryId }));
+  }, [defaultCategoryId, editSlug]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
@@ -83,32 +122,45 @@ export function AdminAddProduct({ setActiveTab }: AdminAddProductProps) {
     }
 
     setLoading(true);
-    void api
-      .createProduct({
-        sku: `BFF-${Date.now()}`,
-        name: formData.name.trim(),
-        slug: formData.name
-          .toLowerCase()
-          .trim()
-          .replace(/[^a-z0-9]+/g, "-")
-          .replace(/(^-|-$)/g, ""),
-        category: formData.categoryId || undefined,
-        pack_image: formData.packImage || "https://placehold.co/800x800/0F1A28/EAF6FB?text=BFF",
-        ingredient_image:
-          formData.ingredientImage || formData.packImage || "https://placehold.co/800x800/0F1A28/EAF6FB?text=BFF",
-        price_inr: Number(formData.price) || 0,
-        blurb: formData.blurb || formData.name,
-        full_description: formData.description,
-        stock_quantity: Number(formData.stock) || 0,
-        white_label_available: formData.privateLabel,
-        export_ready: formData.exportReady,
-        is_organic: formData.isOrganic,
-        status: publishState,
-      })
-      .then(() => {
-        toast.success(publishState === "Published" ? "Product published" : "Draft saved", {
-          description: `${formData.name} is in the catalog.`,
+    const payload = {
+      name: formData.name.trim(),
+      category: formData.categoryId || undefined,
+      pack_image: formData.packImage || "https://placehold.co/800x800/0F1A28/EAF6FB?text=BFF",
+      ingredient_image:
+        formData.ingredientImage || formData.packImage || "https://placehold.co/800x800/0F1A28/EAF6FB?text=BFF",
+      price_inr: Number(formData.price) || 0,
+      blurb: formData.blurb || formData.name,
+      full_description: formData.description,
+      stock_quantity: Number(formData.stock) || 0,
+      white_label_available: formData.privateLabel,
+      export_ready: formData.exportReady,
+      is_organic: formData.isOrganic,
+      status: publishState,
+    };
+
+    const request = isEditing && editSlug
+      ? api.updateProduct(editSlug, payload)
+      : api.createProduct({
+          ...payload,
+          sku: `BFF-${Date.now()}`,
+          slug: formData.name
+            .toLowerCase()
+            .trim()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/(^-|-$)/g, ""),
         });
+
+    void request
+      .then(() => {
+        toast.success(
+          isEditing
+            ? "Product updated"
+            : publishState === "Published"
+              ? "Product published"
+              : "Draft saved",
+          { description: `${formData.name} is in the catalog.` },
+        );
+        onClearEdit?.();
         setActiveTab("products");
       })
       .catch((error) => {
@@ -198,7 +250,10 @@ export function AdminAddProduct({ setActiveTab }: AdminAddProductProps) {
       <div className="flex flex-col gap-3 border-b border-white/10 pb-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <button
-            onClick={() => setActiveTab("products")}
+            onClick={() => {
+              onClearEdit?.();
+              setActiveTab("products");
+            }}
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/15 bg-white/5 text-frost-white hover:border-ice-blue hover:text-ice-blue"
             title="Back to inventory"
           >
@@ -206,30 +261,37 @@ export function AdminAddProduct({ setActiveTab }: AdminAddProductProps) {
           </button>
           <div>
             <span className="inline-flex items-center gap-1 text-[0.65rem] font-bold uppercase tracking-widest text-ice-blue">
-              <Sparkles className="h-3 w-3" /> New SKU
+              <Sparkles className="h-3 w-3" /> {isEditing ? "Edit SKU" : "New SKU"}
             </span>
-            <h2 className="text-xl font-bold text-frost-white">Add Product</h2>
+            <h2 className="text-xl font-bold text-frost-white">
+              {isEditing ? "Edit Product" : "Add Product"}
+            </h2>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => handleSave("Draft")}
-            disabled={loading}
+            disabled={loading || loadingProduct}
             className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-frost-white hover:bg-white/10 disabled:opacity-60"
           >
-            <Save className="h-3.5 w-3.5" /> Draft
+            <Save className="h-3.5 w-3.5" /> {isEditing ? "Save draft" : "Draft"}
           </button>
           <button
-            onClick={() => handleSave("Published")}
-            disabled={loading}
+            onClick={() => handleSave(isEditing ? formData.status : "Published")}
+            disabled={loading || loadingProduct}
             className="inline-flex items-center gap-2 rounded-full bg-gradient-primary-cta px-5 py-2 text-xs font-bold uppercase tracking-widest text-white shadow-frost disabled:opacity-60"
           >
             {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
-            Publish
+            {isEditing ? "Save changes" : "Publish"}
           </button>
         </div>
       </div>
 
+      {loadingProduct ? (
+        <div className="flex items-center justify-center gap-2 py-24 text-sm text-steel-silver">
+          <Loader2 className="h-5 w-5 animate-spin text-ice-blue" /> Loading product…
+        </div>
+      ) : (
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
         <div className="space-y-4 xl:col-span-8">
           <section className="rounded-2xl border border-white/10 bg-card/60 p-4 backdrop-blur-xl sm:p-5">
@@ -427,6 +489,7 @@ export function AdminAddProduct({ setActiveTab }: AdminAddProductProps) {
           </section>
         </div>
       </div>
+      )}
     </div>
   );
 }

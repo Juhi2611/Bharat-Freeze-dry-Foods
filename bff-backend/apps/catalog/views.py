@@ -11,7 +11,7 @@ from .serializers import (
     CategorySerializer, ProductListSerializer, ProductDetailSerializer,
     RecipeSerializer, InteractiveExperienceSerializer
 )
-from apps.users.permissions import IsContentStaff
+from apps.users.permissions import IsContentStaff, CONTENT_ROLES
 
 class FxRateView(APIView):
 	"""Public cached INR→USD indicative rate for storefront cart/checkout."""
@@ -70,7 +70,14 @@ class ProductViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = super().get_queryset()
         if self.action in ['list', 'retrieve']:
-            queryset = queryset.filter(status=Product.Status.PUBLISHED)
+            user = getattr(self.request, 'user', None)
+            is_content_staff = bool(
+                user
+                and user.is_authenticated
+                and getattr(user, 'role', None) in CONTENT_ROLES
+            )
+            if not is_content_staff:
+                queryset = queryset.filter(status=Product.Status.PUBLISHED)
         return queryset
 
 class RecipeViewSet(viewsets.ModelViewSet):

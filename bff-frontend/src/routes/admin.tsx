@@ -14,6 +14,7 @@ import { AdminOrders } from "@/components/admin/AdminOrders";
 import { AdminCustomers } from "@/components/admin/AdminCustomers";
 
 import { AdminCategories } from "@/components/admin/AdminCategories";
+import { AdminPetFoods } from "@/components/admin/AdminPetFoods";
 import { AdminLeads } from "@/components/admin/AdminLeads";
 
 export const Route = createFileRoute("/admin")({
@@ -38,6 +39,8 @@ function AdminPage() {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [selectedEnquiryId, setSelectedEnquiryId] = useState<string | null>(null);
+  const [editingProductSlug, setEditingProductSlug] = useState<string | null>(null);
+  const [defaultCategoryId, setDefaultCategoryId] = useState<string | null>(null);
 
   const hasAdminAccess = isAuthenticated && user?.role !== "customer";
 
@@ -138,13 +141,47 @@ function AdminPage() {
           />
         )}
         {activeTab === "products" && (
-          <AdminProducts setActiveTab={setActiveTab} />
+          <AdminProducts
+            setActiveTab={setActiveTab}
+            onEditProduct={(slug) => {
+              setEditingProductSlug(slug);
+              setActiveTab("add-product");
+            }}
+            onAddProduct={() => {
+              setEditingProductSlug(null);
+              setDefaultCategoryId(null);
+              setActiveTab("add-product");
+            }}
+          />
         )}
         {activeTab === "categories" && (
           <AdminCategories setActiveTab={setActiveTab} />
         )}
+        {activeTab === "pet-foods" && (
+          <AdminPetFoods
+            setActiveTab={setActiveTab}
+            onEditProduct={(slug) => {
+              setEditingProductSlug(slug);
+              setDefaultCategoryId(null);
+              setActiveTab("add-product");
+            }}
+            onAddPetProduct={(categoryId) => {
+              setEditingProductSlug(null);
+              setDefaultCategoryId(categoryId);
+              setActiveTab("add-product");
+            }}
+          />
+        )}
         {activeTab === "add-product" && (
-          <AdminAddProduct setActiveTab={setActiveTab} />
+          <AdminAddProduct
+            setActiveTab={setActiveTab}
+            editSlug={editingProductSlug}
+            defaultCategoryId={defaultCategoryId}
+            onClearEdit={() => {
+              setEditingProductSlug(null);
+              setDefaultCategoryId(null);
+            }}
+          />
         )}
         {activeTab === "enquiries" && (
           <AdminEnquiries
