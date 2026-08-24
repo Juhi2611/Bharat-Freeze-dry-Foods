@@ -121,3 +121,54 @@ class CategoryAPITests(APITestCase):
     def test_unauthenticated_cannot_mutate_categories(self):
         response = self.client.post('/api/v1/categories/', {'name': 'Blocked'}, format='json')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class ProductMediaURLAPITests(APITestCase):
+    def setUp(self):
+        self.product = Product.objects.create(
+            sku='SKU-MEDIA-001',
+            name='Freeze Dried Strawberry',
+            slug='freeze-dried-strawberry',
+            pack_image='http://localhost:8000/media/library/de56fc613eec44a5b04cb51d9df09b26_strawberry.jpg',
+            ingredient_image='/media/library/strawberry_ing.jpg',
+            price_inr=299,
+            blurb='Crispy strawberries',
+            stock_quantity=50,
+            status=Product.Status.PUBLISHED,
+        )
+
+    def test_product_media_urls_with_railway_proxy_headers(self):
+        response = self.client.get(
+            '/api/v1/products/',
+            HTTP_X_FORWARDED_PROTO='https',
+            HTTP_X_FORWARDED_HOST='bharat-freeze-dry-foods-production.up.railway.app',
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        results = response.data['results'] if isinstance(response.data, dict) else response.data
+        item = next(p for p in results if p['slug'] == 'freeze-dried-strawberry')
+        self.assertEqual(
+            item['pack_image'],
+            'https://bharat-freeze-dry-foods-production.up.railway.app/media/library/de56fc613eec44a5b04cb51d9df09b26_strawberry.jpg'
+        )
+        self.assertEqual(
+            item['ingredient_image'],
+            'https://bharat-freeze-dry-foods-production.up.railway.app/media/library/strawberry_ing.jpg'
+        )
+
+    def test_product_media_urls_in_local_dev(self):
+        response = self.client.get(
+            '/api/v1/products/',
+            HTTP_HOST='localhost:8000',
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        results = response.data['results'] if isinstance(response.data, dict) else response.data
+        item = next(p for p in results if p['slug'] == 'freeze-dried-strawberry')
+        self.assertEqual(
+            item['pack_image'],
+            'http://localhost:8000/media/library/de56fc613eec44a5b04cb51d9df09b26_strawberry.jpg'
+        )
+        self.assertEqual(
+            item['ingredient_image'],
+            'http://localhost:8000/media/library/strawberry_ing.jpg'
+        )
+

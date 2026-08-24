@@ -286,3 +286,9 @@ OTP_EMAIL_LOGO_URL = env('OTP_EMAIL_LOGO_URL', default='')
 # Unpaid checkout stock hold TTL (minutes). release_abandoned_orders restores
 # stock for orders older than this that never reached a paid/terminal status.
 ABANDONED_ORDER_TIMEOUT_MINUTES = env.int('ABANDONED_ORDER_TIMEOUT_MINUTES', default=45)
+
+# Reverse Proxy Configuration for Railway / production deployment
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
+USE_X_FORWARDED_PORT = True
+

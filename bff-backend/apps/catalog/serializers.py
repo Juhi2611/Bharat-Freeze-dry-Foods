@@ -1,8 +1,10 @@
 from rest_framework import serializers
 from .models import Category, Product, Recipe, InteractiveExperience
+from config.utils import normalize_media_url
 
 class CategorySerializer(serializers.ModelSerializer):
     product_count = serializers.SerializerMethodField()
+    cover_image = serializers.SerializerMethodField()
 
     class Meta:
         model = Category
@@ -18,19 +20,39 @@ class CategorySerializer(serializers.ModelSerializer):
             return annotated
         return obj.products.count()
 
+    def get_cover_image(self, obj):
+        request = self.context.get('request')
+        return normalize_media_url(obj.cover_image, request)
+
 class RecipeSerializer(serializers.ModelSerializer):
+    video_url = serializers.SerializerMethodField()
+
     class Meta:
         model = Recipe
         fields = '__all__'
 
+    def get_video_url(self, obj):
+        request = self.context.get('request')
+        return normalize_media_url(obj.video_url, request)
+
 class InteractiveExperienceSerializer(serializers.ModelSerializer):
+    video_url = serializers.SerializerMethodField()
+
     class Meta:
         model = InteractiveExperience
         fields = '__all__'
 
+    def get_video_url(self, obj):
+        request = self.context.get('request')
+        return normalize_media_url(obj.video_url, request)
+
 class ProductListSerializer(serializers.ModelSerializer):
     category_name = serializers.ReadOnlyField(source='category.name')
     category_slug = serializers.ReadOnlyField(source='category.slug')
+    pack_image = serializers.SerializerMethodField()
+    pack_image_transparent = serializers.SerializerMethodField()
+    ingredient_image = serializers.SerializerMethodField()
+    ingredient_image_transparent = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -42,12 +64,48 @@ class ProductListSerializer(serializers.ModelSerializer):
             'stock_quantity',
         ]
 
+    def get_pack_image(self, obj):
+        request = self.context.get('request')
+        return normalize_media_url(obj.pack_image, request)
+
+    def get_pack_image_transparent(self, obj):
+        request = self.context.get('request')
+        return normalize_media_url(obj.pack_image_transparent, request)
+
+    def get_ingredient_image(self, obj):
+        request = self.context.get('request')
+        return normalize_media_url(obj.ingredient_image, request)
+
+    def get_ingredient_image_transparent(self, obj):
+        request = self.context.get('request')
+        return normalize_media_url(obj.ingredient_image_transparent, request)
+
 class ProductDetailSerializer(serializers.ModelSerializer):
     category_name = serializers.ReadOnlyField(source='category.name')
     category_slug = serializers.ReadOnlyField(source='category.slug')
     recipe = RecipeSerializer(read_only=True)
     interactive_experience = InteractiveExperienceSerializer(read_only=True)
+    pack_image = serializers.SerializerMethodField()
+    pack_image_transparent = serializers.SerializerMethodField()
+    ingredient_image = serializers.SerializerMethodField()
+    ingredient_image_transparent = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
         fields = '__all__'
+
+    def get_pack_image(self, obj):
+        request = self.context.get('request')
+        return normalize_media_url(obj.pack_image, request)
+
+    def get_pack_image_transparent(self, obj):
+        request = self.context.get('request')
+        return normalize_media_url(obj.pack_image_transparent, request)
+
+    def get_ingredient_image(self, obj):
+        request = self.context.get('request')
+        return normalize_media_url(obj.ingredient_image, request)
+
+    def get_ingredient_image_transparent(self, obj):
+        request = self.context.get('request')
+        return normalize_media_url(obj.ingredient_image_transparent, request)
