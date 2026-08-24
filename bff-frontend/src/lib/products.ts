@@ -1,4 +1,4 @@
-import type { ApiInteractiveExperience, ApiProduct, ApiRecipe } from '@/services/api';
+import { resolveMediaUrl, type ApiInteractiveExperience, type ApiProduct, type ApiRecipe } from '@/services/api';
 
 export type Category = string;
 
@@ -54,7 +54,7 @@ const toRecipe = (recipe?: ApiRecipe | null): Recipe | undefined => recipe ? {
   slug: recipe.slug,
   name: recipe.title,
   description: recipe.description,
-  videoUrl: recipe.video_url,
+  videoUrl: resolveMediaUrl(recipe.video_url),
   prepTime: recipe.prep_time,
   difficulty: recipe.difficulty,
   ingredients: recipe.ingredients,
@@ -65,7 +65,7 @@ const toInteractiveExperience = (experience?: ApiInteractiveExperience | null): 
   title: experience.title,
   description: experience.description,
   features: experience.features,
-  videoUrl: experience.video_url,
+  videoUrl: resolveMediaUrl(experience.video_url),
   ingredients: experience.ingredient_benefits.map((ingredient) => ({
     name: ingredient.name || 'Ingredient',
     emoji: ingredient.emoji || '',
@@ -82,10 +82,10 @@ export const mapApiProduct = (product: ApiProduct): Product => ({
   slug: product.slug,
   name: product.name,
   category: product.category_name || 'Uncategorized',
-  packImage: product.pack_image,
-  packImageTransparent: product.pack_image_transparent || undefined,
-  ingredientImage: product.ingredient_image,
-  ingredientImageTransparent: product.ingredient_image_transparent || undefined,
+  packImage: resolveMediaUrl(product.pack_image),
+  packImageTransparent: resolveMediaUrl(product.pack_image_transparent) || undefined,
+  ingredientImage: resolveMediaUrl(product.ingredient_image),
+  ingredientImageTransparent: resolveMediaUrl(product.ingredient_image_transparent) || undefined,
   bgRemovalStatus: product.bg_removal_status || undefined,
   accent: product.accent_color,
   price: `₹${Number(product.price_inr).toLocaleString('en-IN')}`,
@@ -95,3 +95,4 @@ export const mapApiProduct = (product: ApiProduct): Product => ({
   recipe: toRecipe(product.recipe),
   interactiveExperience: toInteractiveExperience(product.interactive_experience),
 });
+

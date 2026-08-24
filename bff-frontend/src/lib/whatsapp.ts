@@ -3,9 +3,8 @@
  * Falls back to constants below if the API is unreachable.
  */
 
-const API_BASE_URL = (
-  import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1'
-).replace(/\/$/, '');
+import { API_BASE_URL } from '@/services/api';
+
 
 export const FALLBACK_WHATSAPP_NUMBER = '919993377038';
 export const FALLBACK_PHONE_DISPLAY = '+91 99933 77038';

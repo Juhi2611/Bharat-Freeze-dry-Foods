@@ -1,13 +1,97 @@
 /**
- * API origin including `/api/v1` prefix.
- * Local default is fine for `npm run dev`. Staging/production builds MUST set
- * VITE_API_BASE_URL (see `.env.example`).
+ * Backend environment configuration.
+ * Local default is fine for `npm run dev`. Vercel production builds MUST set
+ * VITE_API_URL or VITE_API_BASE_URL (see `.env.example`).
  */
-const API_BASE_URL = (
-  // Use localhost (not 127.0.0.1) so SPA on localhost:* is same-site as the API
-  // and the httpOnly refresh cookie is sent on silent refresh after page reload.
-  import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1'
+const RAW_API_URL = (
+  import.meta.env.VITE_API_URL ||
+  import.meta.env.VITE_API_BASE_URL ||
+  'https://bharat-freeze-dry-foods-production.up.railway.app'
 ).replace(/\/$/, '');
+
+/**
+ * Root backend host (e.g. "https://bharat-freeze-dry-foods-production.up.railway.app")
+ * without trailing slashes or `/api` / `/api/v1` path components.
+ */
+export const BACKEND_ORIGIN = RAW_API_URL
+  .replace(/\/api\/v1\/?$/, '')
+  .replace(/\/api\/?$/, '');
+
+/**
+ * Standardized API base URL including `/api/v1` prefix.
+ */
+export const API_BASE_URL = `${BACKEND_ORIGIN}/api/v1`;
+
+/**
+ * Resolves media and asset URLs (product images, uploaded files, etc.) so relative
+ * paths like `/media/products/image.jpg` or local dev URLs like `http://localhost:8000/media/...`
+ * are correctly transformed into full URLs pointing to the live Railway backend origin.
+ */
+export function resolveMediaUrl(url?: string | null): string {
+  if (!url) return '';
+  const trimmed = url.trim();
+  if (!trimmed) return '';
+
+  // If URL contains localhost or 127.0.0.1 (e.g. from local DB or Django dev server responses),
+  // extract the `/media/` relative portion and prefix with BACKEND_ORIGIN in production.
+  if (trimmed.includes('localhost:') || trimmed.includes('127.0.0.1:')) {
+    const mediaIdx = trimmed.indexOf('/media/');
+    if (mediaIdx !== -1) {
+      return `${BACKEND_ORIGIN}${trimmed.substring(mediaIdx)}`;
+    }
+  }
+
+  // Handle relative paths: `/media/products/...` or `media/products/...`
+  if (trimmed.startsWith('/media/')) {
+    return `${BACKEND_ORIGIN}${trimmed}`;
+  }
+  if (trimmed.startsWith('media/')) {
+    return `${BACKEND_ORIGIN}/${trimmed}`;
+  }
+
+  return trimmed;
+}
+
+export function normalizeProduct(p: ApiProduct): ApiProduct {
+  if (!p) return p;
+  return {
+    ...p,
+    pack_image: resolveMediaUrl(p.pack_image),
+    pack_image_transparent: resolveMediaUrl(p.pack_image_transparent) || undefined,
+    ingredient_image: resolveMediaUrl(p.ingredient_image),
+    ingredient_image_transparent: resolveMediaUrl(p.ingredient_image_transparent) || undefined,
+    recipe: p.recipe
+      ? {
+          ...p.recipe,
+          video_url: resolveMediaUrl(p.recipe.video_url),
+        }
+      : p.recipe,
+    interactive_experience: p.interactive_experience
+      ? {
+          ...p.interactive_experience,
+          video_url: resolveMediaUrl(p.interactive_experience.video_url),
+        }
+      : p.interactive_experience,
+  };
+}
+
+export function normalizeCategory(c: ApiCategory): ApiCategory {
+  if (!c) return c;
+  return {
+    ...c,
+    cover_image: resolveMediaUrl(c.cover_image),
+  };
+}
+
+export function normalizeMediaFile(m: ApiMediaFile): ApiMediaFile {
+  if (!m) return m;
+  return {
+    ...m,
+    file_url: resolveMediaUrl(m.file_url),
+    transparent_file_url: resolveMediaUrl(m.transparent_file_url) || undefined,
+  };
+}
+
 
 export interface UserProfile {
   id: string;
@@ -522,19 +606,34 @@ export const api = {
     }),
 
   // Catalog
-  getProducts: (categorySlug?: string): Promise<{ results: ApiProduct[] } | ApiProduct[]> => {
+  getProducts: async (categorySlug?: string): Promise<{ results: ApiProduct[] } | ApiProduct[]> => {
     const query = categorySlug ? `?category__slug=${categorySlug}` : '';
-    return request<any>(`/products/${query}`);
+    const res = await request<any>(`/products/${query}`);
+    if (Array.isArray(res)) {
+      return res.map(normalizeProduct);
+    }
+    if (res && Array.isArray(res.results)) {
+      return { ...res, results: res.results.map(normalizeProduct) };
+    }
+    return res;
   },
 
-  getProduct: (slug: string): Promise<ApiProduct> => request<ApiProduct>(`/products/${slug}/`),
+  getProduct: async (slug: string): Promise<ApiProduct> => {
+    const p = await request<ApiProduct>(`/products/${slug}/`);
+    return normalizeProduct(p);
+  },
   getRecipes: async () => unwrapList(await request<ApiList<ApiRecipe>>('/recipes/')),
   getInteractiveExperiences: async () => unwrapList(await request<ApiList<ApiInteractiveExperience>>('/interactive-experiences/')),
 
-  getCategories: async (): Promise<ApiCategory[]> =>
-    unwrapList(await request<ApiList<ApiCategory>>('/categories/')),
+  getCategories: async (): Promise<ApiCategory[]> => {
+    const list = unwrapList(await request<ApiList<ApiCategory>>('/categories/'));
+    return list.map(normalizeCategory);
+  },
 
-  getCategory: (id: string): Promise<ApiCategory> => request<ApiCategory>(`/categories/${id}/`),
+  getCategory: async (id: string): Promise<ApiCategory> => {
+    const cat = await request<ApiCategory>(`/categories/${id}/`);
+    return normalizeCategory(cat);
+  },
 
   createCategory: (data: Partial<ApiCategory>) => request<ApiCategory>('/categories/', {
     method: 'POST',
@@ -601,7 +700,10 @@ export const api = {
   downloadOrderInvoice: (id: string) => requestBlob(`/orders/${id}/invoice/`),
   getMyOrders: async () => unwrapList(await request<ApiList<ApiOrder>>('/orders/mine/')),
   getMyOrder: (id: string) => request<ApiOrder>(`/orders/mine/${id}/`),
-  getMediaFiles: async () => unwrapList(await request<ApiList<ApiMediaFile>>('/media/files/')),
+  getMediaFiles: async (): Promise<ApiMediaFile[]> => {
+    const list = unwrapList(await request<ApiList<ApiMediaFile>>('/media/files/'));
+    return list.map(normalizeMediaFile);
+  },
   deleteMediaFile: (id: string) => request<void>(`/media/files/${id}/`, { method: 'DELETE' }),
 
   uploadMediaFile: async (file: File, category = 'Categories'): Promise<ApiMediaFile> => {
@@ -629,7 +731,8 @@ export const api = {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(formatApiError(errorData as Record<string, unknown>));
     }
-    return response.json();
+    const data = await response.json();
+    return normalizeMediaFile(data);
   },
   getActivityLogs: async () => unwrapList(await request<ApiList<ApiActivityLog>>('/activity/logs/')),
   getAdminUsers: async () => unwrapList(await request<ApiList<UserProfile>>('/admin/users/')),
